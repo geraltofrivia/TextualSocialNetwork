@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 flag_init = False		#Flag depicting if the db is being created for the first time
-#QUERIES
+#SQL STATEMENTS
 create_table = '''
 								CREATE TABLE REGISTRY (
 									ID TEXT PRIMARY KEY NOT NULL,
@@ -12,6 +12,7 @@ create_table = '''
 
 insert = ''' INSERT INTO REGISTRY (ID, NAME, SEX) \
 							VALUES (:id, :name, :sex) '''
+
 
 
 if not os.path.isfile("users.db"):
