@@ -27,7 +27,8 @@ def transfer_connection(client,addr,port):
 	connection.listen(1)
 
 	#Notify the client about the updated connection
-	client.send(str(port),len(str(port)))
+	print port
+	client.send(str(port),len(str(port))+1)							#Add 1 to length to solve a minor bug. Client receiving 1000 in place of 10000
 	client.close()
 	#Wait for the client to connect to the new socket
 	client,addr = connection.accept()
@@ -61,4 +62,4 @@ while True:
 	#Now the client has connected. We would want to transfer this into a new socket and hold the client, while clearing the main socket for more clients
 	client,addr = transfer_connection(client,addr,client_port)
 	thread = transfer_control(client,addr)
-	manage_threads
+
