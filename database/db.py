@@ -2,22 +2,26 @@ import sqlite3
 import os
 import queries
 
+class Datastore:
+	def __init__(self):
+		flag_init = False		
+		#If the database doesn't yet exist, set flag.
+		if not os.path.isfile("data.db"):			
+			flag_init = True
 
-Class Datastore:
-	def __init__():
-	flag_init = False		
-	if not os.path.isfile("data.db"):
-		#The DB doesn't yet exist. 
-		#This flag implies that we ought to create tables
-		flag_init = True
+		self.db = sqlite3.connect('data.db')
+		self.cursor = self.db.cursor()
+		print "(Database):Database Connected"
+		if flag_init:
+			#Initialize the Database Tables
+			for table in queries.getCreateTable():
+				self.cursor.execute(table)
+				print "(Database):Table created successfully"
 
-	db = sqlite3.connect('data.db')
-	cursor = db.cursor()
-	print "(Database):Database Connected"
+	def insert_new_user(self,userid,name,sex):
+		query = queries.getInsertUser()
+		self.cursor.execute(query, {'userid':userid,'name':name,'sex':sex} )
+		self.db.commit()
 
-	#If the database doesn't exist already 
-	if flag_init:
-		for table in queries.getCreateTable():
-			cursor.execute(table)
-			print "(Database):Table created successfully"
-
+	def exit():
+		self.db.close()
