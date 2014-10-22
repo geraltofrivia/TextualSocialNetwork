@@ -10,7 +10,7 @@ def transfer(port):
 	return server
 
 s = socket.socket()
-port = 9500
+port = 9000
 host = socket.gethostname()
 
 print "**Attempting a connection"
