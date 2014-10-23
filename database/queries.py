@@ -1,4 +1,5 @@
 ########################################CREATE TABLE QUERIES########################################
+
 create_users = '''
 								CREATE TABLE USERS (
 									USERID TEXT PRIMARY KEY NOT NULL,
@@ -10,8 +11,8 @@ create_posts = '''
 								CREATE TABLE POSTS (
 									TIMESTAMP TEXT NOT NULL,
 									USERID TEXT NOT NULL,
-									POSTID TEXT NOT NULL
-									DATA TEXT NOT NULL
+									POSTID TEXT PRIMARY KEY NOT NULL,
+									CONTENT TEXT NOT NULL
 									);'''
 
 create_subscriptions = '''
@@ -39,8 +40,8 @@ insert_user = '''INSERT INTO USERS
 									VALUES (:userid, :name, :sex) '''
 
 insert_post = '''INSERT INTO POSTS
-									(TIMESTAMP, USERID, POSTID, DATA) \
-									VALUES (:timestamp,:userid,:postid,:data) '''
+									(TIMESTAMP, USERID, POSTID, CONTENT) \
+									VALUES (:timestamp,:userid,:postid,:content) '''
 
 insert_subscription = '''INSERT INTO SUBSCRIPTIONS
 													(USERID, SUBSID) \
@@ -48,22 +49,21 @@ insert_subscription = '''INSERT INTO SUBSCRIPTIONS
 
 insert_poke = '''INSERT INTO POKES
 									(FROMID, TOID) \
-									VALUES (:fromid, :toid) '''
+									VALUES (:fromid,:toid) '''
 
 insert_up = '''INSERT INTO UPS
 									(POSTID, USERID) \
 									VALUES (:postid,:userid) '''
-
 
 ########################################QUERIES########################################
 
 all_users = '''SELECT USERID, NAME, SEX 
 								FROM USERS'''
 
-all_posts = '''SELECT POSTID, DATA, USERID, TIMESTAMP
+all_posts = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 								FROM POSTS'''
 
-all_posts_by_user = '''SELECT POSTID, DATA, USERID, TIMESTAMP
+all_posts_by_user = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 												FROM POSTS
 												WHERE USERID = :userid'''
 
@@ -71,17 +71,20 @@ all_subscriptions_of_user = '''SELECT USERID, SUBSID
 																FROM SUBSCRIPTIONS
 																WHERE USERID = :userid'''
 
-all_pokes_by_user = '''SELECT FROMID, TOID
+all_pokes_by_user = '''SELECT TOID
 												FROM POKES
-												WHERE FROMID = :userid'''																
+												WHERE FROMID = :userid'''
 
-all_pokes_to_user = '''SELECT FROMID, TOID
+all_pokes_to_user = '''SELECT FROMID
 												FROM POKES
-												WHERE TOID = :userid'''												
+												WHERE TOID = :userid'''
+
+all_pokes = '''SELECT FROMID, TOID
+								FROM POKES'''
 																
-all_ups_to_post = '''SELECT POSTID, USERID
+all_ups_to_post = '''SELECT USERID
 											FROM UPS
-											WHERE POSTID = :postid'''																				
+											WHERE POSTID = :postid'''									
 
 #Function to fetch create table queries
 def getCreateTable():
@@ -113,7 +116,7 @@ def getAllPosts():
 def getPostsByUser():
 	return all_posts_by_user
 
-def getSubscribersOfUser():
+def getSubscriptionsOfUser():
 	return all_subscriptions_of_user
 
 def getPokesByUser():
@@ -122,8 +125,8 @@ def getPokesByUser():
 def getPokesToUser():
 	return all_pokes_to_user
 
+def getPokes():
+	return all_pokes
+
 def getUpsToPost():
 	return all_ups_to_post
-
-
-

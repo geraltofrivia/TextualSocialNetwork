@@ -1,3 +1,4 @@
+
 import sqlite3
 import os
 import queries
@@ -35,7 +36,15 @@ class Helper:
 	def getNow(self):
 		return str(datetime.datetime.now())
 
+''' The datastore class will interface all the functions that will be required of the database
+Once instantiated, it will automatically generate tables and create and connect to database
+All the insert queries will return 0 or -1 based on the success of the insert operation
+All the search queries will return a list of all the elements found
 
+Open one instance of this class per active user/operating class.
+And close the database instance once the user disconnects
+To close the database after the operations are done, call the exit() function.
+'''
 class Datastore(Helper):
 	def __init__(self):
 		flag_init = False		
@@ -64,14 +73,13 @@ class Datastore(Helper):
 			print "(Database):Improper Datatype, value rejected"
 			#WHAT TO DO NOW?
 
-	def insert_new_post(self,userid,postid,text):
+	def insert_new_post(self,userid,postid,content):
 		query = queries.getInsertPost()
 		userid = self.checkText(userid)
 		postid = self.checkText(postid)
-		text = self.checkText(text)
-		if not ( userid == -1 or postid == -1 or text == -1 ):
+		if not ( userid == -1 or postid == -1):
 			timestamp = self.getNow()
-			self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'data':data} )
+			self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
 			self.db.commit()
 		else:
 			print "(Database):Improper Datatype, value rejected"
@@ -93,14 +101,14 @@ class Datastore(Helper):
 		fromid = self.checkText(fromid)
 		toid = self.checkText(toid)
 		if not ( toid == -1 or fromid == -1 ):
-			self.cursor.execute(query, {'fromid':fromid, 'toid':toid} )
+			self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
 			self.db.commit()
 		else:
 			print "(Database):Improper Datatype, value rejected"
 			#WHAT TO DO NOW?
 
 	def insert_new_up(self,postid,userid):
-		query = queries.getInsertUps()
+		query = queries.getInsertUp()
 		postid = self.checkText(postid)
 		userid = self.checkText(userid)
 		if not ( postid == -1 or userid == -1 ):
@@ -109,6 +117,90 @@ class Datastore(Helper):
 		else:
 			print "(Database):Improper Datatype, value rejected"
 			#WHAT TO DO NOW?			
+
+	def get_all_users(self):
+		query = queries.getAllUsers()
+		self.cursor.execute(query)
+		result = []
+		for user in self.cursor:
+			result.append(user)			
+		return result
+
+	def get_all_posts(self,get_ups=False):
+		query = queries.getAllPosts()
+		self.cursor.execute(query)
+		result = []
+		for post in self.cursor:
+			result.append(post)	
+		if get_ups:
+			final = []
+			for post in result:
+				ups = self.get_ups_for(post[0])
+				set = []
+				for element in post:
+					set.append(element)
+				set.append(len(ups))
+				final.append(set)
+			return final
+		return result
+
+	def get_posts_of(self,userid,get_ups=False):
+		query = queries.getPostsByUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for post in self.cursor:
+			result.append(post)	
+		if get_ups:
+			final = []
+			for post in result:
+				ups = self.get_ups_for(post[0])
+				set = []
+				for element in post:
+					set.append(element)
+				set.append(len(ups))
+				final.append(set)
+			return final
+		return result
+
+	def get_subscriptions_of(self,userid):
+		query = queries.getSubscriptionsOfUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for subscription in self.cursor:
+			result.append(subscription[1])
+		return result
+
+	def get_pokes_by(self,userid):
+		query = queries.getPokesByUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for user in self.cursor:
+			result.append(user[0])
+		return result		
+
+	def get_pokes_for(self,userid):
+		query = queries.getPokesToUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for user in self.cursor:
+			result.append(user[0])
+		return result		
+	
+	def get_all_pokes(self):
+		query = queries.getPokes()
+		self.cursor.execute(query)
+		result = []
+		for poke in self.cursor:
+			result.append(poke)
+		return result
+
+	def get_ups_for(self,postid):
+		query = queries.getUpsToPost()
+		self.cursor.execute(query, {'postid':postid} )
+		result = []
+		for ups in self.cursor:
+			result.append(ups[0])
+		return result
 
 	def exit():
 		self.db.close()
