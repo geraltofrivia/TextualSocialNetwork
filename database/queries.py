@@ -4,7 +4,8 @@ create_users = '''
 								CREATE TABLE USERS (
 									USERID TEXT PRIMARY KEY NOT NULL,
 								 	NAME TEXT NOT NULL,
-								 	SEX TEXT NOT NULL 
+								 	SEX TEXT NOT NULL,
+								 	PASSWORD TEXT NOT NULL
 								 );'''
 
 create_posts = '''
@@ -36,8 +37,8 @@ create_ups = '''
 ########################################INSERT QUERIES########################################
 
 insert_user = '''INSERT INTO USERS
-									(USERID, NAME, SEX) \
-									VALUES (:userid, :name, :sex) '''
+									(USERID, NAME, SEX, PASSWORD) \
+									VALUES (:userid, :name, :sex, :password) '''
 
 insert_post = '''INSERT INTO POSTS
 									(TIMESTAMP, USERID, POSTID, CONTENT) \

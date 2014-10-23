@@ -85,13 +85,14 @@ class Datastore(Helper):
 		else:
 			return -1
 
-	def insert_new_user(self,userid,name,sex):
+	def insert_new_user(self,userid,name,sex,password):
 		query = queries.getInsertUser()
 		userid = self.checkText(userid)
 		name = self.checkText(name)
 		sex = self.checkSex(sex)
-		if not ( userid == -1 or name == -1 or sex == -1 ):
-			self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex} )
+		password = self.checkText(password)
+		if not ( userid == -1 or name == -1 or sex == -1 or password == -1):
+			self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
 			self.db.commit()
 		else:
 			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex

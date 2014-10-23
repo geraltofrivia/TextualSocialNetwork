@@ -6,10 +6,10 @@ if os.path.isfile("data.db"):
 
 database = db.Datastore()
 
-database.insert_new_user('geralt','priyansh','m')
-database.insert_new_user('ian','hor','m')
-database.insert_new_user('mom','vinita','f')
-database.insert_new_user('dad','ajay','m')
+database.insert_new_user('geralt','priyansh','m','pass')
+database.insert_new_user('ian','hor','m','root')
+database.insert_new_user('mom','vinita','f','mod')
+database.insert_new_user('dad','ajay','m','admin')
 
 database.insert_new_post('geralt','100','Hey you')
 database.insert_new_post('geralt','101','Out there on your own')
