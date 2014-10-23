@@ -99,7 +99,7 @@ class Datastore(Helper):
 
 	def insert_new_post(self,userid,postid,content):
 		query = queries.getInsertPost()
-		userid = self.checkText(userid)
+		userid = self.is_existing_userid(userid)
 		postid = self.checkText(postid)
 		if not ( userid == -1 or postid == -1):
 			timestamp = self.getNow()
@@ -200,7 +200,7 @@ class Datastore(Helper):
 		for user in subs:
 			posts = self.get_posts_of(user,get_ups)
 			result = result + posts
-		return result
+		return sorted(result, key=lambda x : x[3], reverse = True)
 
 	def get_subscriptions_of(self,userid):
 		'''Return a list of userid whose posts are to be fetched for this user

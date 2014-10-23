@@ -61,11 +61,13 @@ all_users = '''SELECT USERID, NAME, SEX
 								FROM USERS'''
 
 all_posts = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
-								FROM POSTS'''
+								FROM POSTS
+								ORDER BY TIMESTAMP DESC'''
 
 all_posts_by_user = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 												FROM POSTS
-												WHERE USERID = :userid'''
+												WHERE USERID = :userid
+												ORDER BY TIMESTAMP DESC'''
 
 all_subscriptions_of_user = '''SELECT USERID, SUBSID
 																FROM SUBSCRIPTIONS
