@@ -58,7 +58,7 @@ print "UPS FOR 100"
 ups = database.get_ups_for('100')
 for user in ups:
 	print user
-print "POSTS FOR GERALT"
+print "POSTS OF GERALT"
 posts = database.get_posts_of('geralt',True)
 for post in posts:
 	print post
@@ -74,3 +74,9 @@ print "POKES TO MOM"
 pokes = database.get_pokes_for('mom')
 for poke in pokes:
 	print poke
+print "POSTS FOR GERALT"
+posts = database.get_posts_for('geralt')
+for post in posts:
+	print post
+
+database.exit()

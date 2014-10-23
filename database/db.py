@@ -118,6 +118,7 @@ class Datastore(Helper):
 			print "(Database):Improper Datatype, value rejected"
 			#WHAT TO DO NOW?			
 
+	'''Return a list of tuple (userid,name,sex) for all users'''
 	def get_all_users(self):
 		query = queries.getAllUsers()
 		self.cursor.execute(query)
@@ -126,6 +127,8 @@ class Datastore(Helper):
 			result.append(user)			
 		return result
 
+	'''Returns a list of tuple (postid,text,userid,timestamp) for all posts. 
+	If parameter is true, returns number of ups per post as well'''
 	def get_all_posts(self,get_ups=False):
 		query = queries.getAllPosts()
 		self.cursor.execute(query)
@@ -144,6 +147,8 @@ class Datastore(Helper):
 			return final
 		return result
 
+	'''Returns a list of tuple (postid,text,userid,timestamp) for posts of a specific user 
+	If parameter is true, returns number of ups per post as well'''
 	def get_posts_of(self,userid,get_ups=False):
 		query = queries.getPostsByUser()
 		self.cursor.execute(query, {'userid':userid} )
@@ -162,6 +167,19 @@ class Datastore(Helper):
 			return final
 		return result
 
+	'''Returns a list of tuple (postid, text, userid, timestamp)
+	collected from the users which are subscribed by this user. This can directly be fed in a timeline
+	If parameter is true, returns number of ups per post as well'''
+	def get_posts_for(self,userid,get_ups=False):
+		subs = self.get_subscriptions_of(userid)
+		result = []
+		for user in subs:
+			posts = self.get_posts_of(user,get_ups)
+			result = result + posts
+		return result
+
+	'''Return a list of userid whose posts are to be fetched for this user
+	In other words, returns a list of subscriptions for this user'''
 	def get_subscriptions_of(self,userid):
 		query = queries.getSubscriptionsOfUser()
 		self.cursor.execute(query, {'userid':userid} )
@@ -170,6 +188,7 @@ class Datastore(Helper):
 			result.append(subscription[1])
 		return result
 
+	'''Returns a list of userids of people whom this user has poked'''
 	def get_pokes_by(self,userid):
 		query = queries.getPokesByUser()
 		self.cursor.execute(query, {'userid':userid} )
@@ -178,6 +197,7 @@ class Datastore(Helper):
 			result.append(user[0])
 		return result		
 
+	'''Returns a list of userids who have poked this user'''
 	def get_pokes_for(self,userid):
 		query = queries.getPokesToUser()
 		self.cursor.execute(query, {'userid':userid} )
@@ -186,6 +206,7 @@ class Datastore(Helper):
 			result.append(user[0])
 		return result		
 	
+	'''Returns a list of tuple (from, to) of pokes in the database'''
 	def get_all_pokes(self):
 		query = queries.getPokes()
 		self.cursor.execute(query)
@@ -194,6 +215,7 @@ class Datastore(Helper):
 			result.append(poke)
 		return result
 
+	'''Returns a list of userids who have upped a post'''
 	def get_ups_for(self,postid):
 		query = queries.getUpsToPost()
 		self.cursor.execute(query, {'postid':postid} )
@@ -202,5 +224,5 @@ class Datastore(Helper):
 			result.append(ups[0])
 		return result
 
-	def exit():
+	def exit(self):
 		self.db.close()
