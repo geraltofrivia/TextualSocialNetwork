@@ -84,7 +84,15 @@ all_pokes = '''SELECT FROMID, TOID
 																
 all_ups_to_post = '''SELECT USERID
 											FROM UPS
-											WHERE POSTID = :postid'''									
+											WHERE POSTID = :postid'''				
+
+find_user = '''SELECT USERID, NAME, SEX
+								FROM USERS
+								WHERE USERID = :userid'''
+
+find_post = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
+								FROM POSTS
+								WHERE POSTID = :postid'''
 
 #Function to fetch create table queries
 def getCreateTable():
@@ -130,3 +138,9 @@ def getPokes():
 
 def getUpsToPost():
 	return all_ups_to_post
+
+def getFindUser():
+	return find_user
+
+def getFindPost():
+	return find_post

@@ -7,7 +7,7 @@ if os.path.isfile("data.db"):
 database = db.Datastore()
 
 database.insert_new_user('geralt','priyansh','m')
-database.insert_new_user('hor','ian','m')
+database.insert_new_user('ian','hor','m')
 database.insert_new_user('mom','vinita','f')
 database.insert_new_user('dad','ajay','m')
 
@@ -25,11 +25,11 @@ database.insert_new_post('mom','212',' But you dont really care for music, do yo
 
 database.insert_new_up('100','geralt')
 database.insert_new_up('100','dad')
-database.insert_new_up('101','dad')
+database.insert_new_up('101','daddy')
 database.insert_new_up('102','dad')
 database.insert_new_up('110','dad')
 database.insert_new_up('110','mom')
-database.insert_new_up('110','hor')
+database.insert_new_up('110','ian')
 database.insert_new_up('110','geralt')
 
 database.insert_new_subscription('geralt','mom')
@@ -78,5 +78,8 @@ print "POSTS FOR GERALT"
 posts = database.get_posts_for('geralt')
 for post in posts:
 	print post
+print "TESTING REFERENCE CHECK"
+print database.is_existing_userid('geralto')
+print database.is_existing_userid('geralto')
 
 database.exit()

@@ -61,6 +61,30 @@ class Datastore(Helper):
 				self.cursor.execute(table)
 				print "(Database):Table created successfully"
 
+	def is_existing_userid(self,userid):
+		'''Returns var or -1 verifying if the userid exists in the database'''
+		query = queries.getFindUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for user in self.cursor:
+			result.append(user)
+		if len(result) > 0:
+			return userid
+		else:
+			return -1
+
+	def is_existing_postid(self,postid):
+		'''Returns var or -1, verifying if the postid exists in the database'''
+		query = queries.getFindPost()
+		self.cursor.execute(query, {'postid':postid} )
+		result = []
+		for post in self.cursor:
+			result.append(post)
+		if len(result) > 0:
+			return postid
+		else:
+			return -1
+
 	def insert_new_user(self,userid,name,sex):
 		query = queries.getInsertUser()
 		userid = self.checkText(userid)
@@ -70,7 +94,7 @@ class Datastore(Helper):
 			self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex} )
 			self.db.commit()
 		else:
-			print "(Database):Improper Datatype, value rejected"
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
 			#WHAT TO DO NOW?
 
 	def insert_new_post(self,userid,postid,content):
@@ -82,44 +106,44 @@ class Datastore(Helper):
 			self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
 			self.db.commit()
 		else:
-			print "(Database):Improper Datatype, value rejected"
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
 			#WHAT TO DO NOW?
 
 	def insert_new_subscription(self,userid,subsid):
 		query = queries.getInsertSubscription()
-		userid = self.checkText(userid)
-		subsid = self.checkText(subsid)
+		userid = self.is_existing_userid(userid)
+		subsid = self.is_existing_userid(subsid)
 		if not ( userid == -1 or subsid == -1 ):
 			self.cursor.execute(query, {'userid':userid,'subsid':subsid} )
 			self.db.commit()
 		else:
-			print "(Database):Improper Datatype, value rejected"
+			print "(Database: Insert Subscription):Improper Datatype, value rejected. userid:",userid,'\tsubsid:',subsid
 			#WHAT TO DO NOW?
 
 	def insert_new_poke(self,fromid,toid):
 		query = queries.getInsertPoke()
-		fromid = self.checkText(fromid)
-		toid = self.checkText(toid)
+		fromid = self.is_existing_userid(fromid)
+		toid = self.is_existing_userid(toid)
 		if not ( toid == -1 or fromid == -1 ):
 			self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
 			self.db.commit()
 		else:
-			print "(Database):Improper Datatype, value rejected"
+			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
 			#WHAT TO DO NOW?
 
 	def insert_new_up(self,postid,userid):
 		query = queries.getInsertUp()
-		postid = self.checkText(postid)
-		userid = self.checkText(userid)
+		postid = self.is_existing_postid(postid)
+		userid = self.is_existing_userid(userid)
 		if not ( postid == -1 or userid == -1 ):
 			self.cursor.execute(query, {'postid':postid,'userid':userid} )
 			self.db.commit()
 		else:
-			print "(Database):Improper Datatype, value rejected"
+			print "(Database: Insert Up):Improper Datatype, value rejected. postid:",postid,'\tuserid:',userid
 			#WHAT TO DO NOW?			
 
-	'''Return a list of tuple (userid,name,sex) for all users'''
 	def get_all_users(self):
+		'''Return a list of tuple (userid,name,sex) for all users'''
 		query = queries.getAllUsers()
 		self.cursor.execute(query)
 		result = []
@@ -127,9 +151,9 @@ class Datastore(Helper):
 			result.append(user)			
 		return result
 
-	'''Returns a list of tuple (postid,text,userid,timestamp) for all posts. 
-	If parameter is true, returns number of ups per post as well'''
 	def get_all_posts(self,get_ups=False):
+		'''Returns a list of tuple (postid,text,userid,timestamp) for all posts. 
+		If parameter is true, returns number of ups per post as well'''	
 		query = queries.getAllPosts()
 		self.cursor.execute(query)
 		result = []
@@ -147,9 +171,9 @@ class Datastore(Helper):
 			return final
 		return result
 
-	'''Returns a list of tuple (postid,text,userid,timestamp) for posts of a specific user 
-	If parameter is true, returns number of ups per post as well'''
 	def get_posts_of(self,userid,get_ups=False):
+		'''Returns a list of tuple (postid,text,userid,timestamp) for posts of a specific user 
+		If parameter is true, returns number of ups per post as well'''
 		query = queries.getPostsByUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
@@ -167,10 +191,10 @@ class Datastore(Helper):
 			return final
 		return result
 
-	'''Returns a list of tuple (postid, text, userid, timestamp)
-	collected from the users which are subscribed by this user. This can directly be fed in a timeline
-	If parameter is true, returns number of ups per post as well'''
 	def get_posts_for(self,userid,get_ups=False):
+		'''Returns a list of tuple (postid, text, userid, timestamp)
+		collected from the users which are subscribed by this user. This can directly be fed in a timeline
+		If parameter is true, returns number of ups per post as well'''
 		subs = self.get_subscriptions_of(userid)
 		result = []
 		for user in subs:
@@ -178,9 +202,9 @@ class Datastore(Helper):
 			result = result + posts
 		return result
 
-	'''Return a list of userid whose posts are to be fetched for this user
-	In other words, returns a list of subscriptions for this user'''
 	def get_subscriptions_of(self,userid):
+		'''Return a list of userid whose posts are to be fetched for this user
+		In other words, returns a list of subscriptions for this user'''
 		query = queries.getSubscriptionsOfUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
@@ -188,8 +212,8 @@ class Datastore(Helper):
 			result.append(subscription[1])
 		return result
 
-	'''Returns a list of userids of people whom this user has poked'''
 	def get_pokes_by(self,userid):
+		'''Returns a list of userids of people whom this user has poked'''
 		query = queries.getPokesByUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
@@ -197,8 +221,8 @@ class Datastore(Helper):
 			result.append(user[0])
 		return result		
 
-	'''Returns a list of userids who have poked this user'''
 	def get_pokes_for(self,userid):
+		'''Returns a list of userids who have poked this user'''
 		query = queries.getPokesToUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
@@ -206,8 +230,8 @@ class Datastore(Helper):
 			result.append(user[0])
 		return result		
 	
-	'''Returns a list of tuple (from, to) of pokes in the database'''
 	def get_all_pokes(self):
+		'''Returns a list of tuple (from, to) of pokes in the database'''
 		query = queries.getPokes()
 		self.cursor.execute(query)
 		result = []
@@ -215,8 +239,8 @@ class Datastore(Helper):
 			result.append(poke)
 		return result
 
-	'''Returns a list of userids who have upped a post'''
 	def get_ups_for(self,postid):
+		'''Returns a list of userids who have upped a post'''
 		query = queries.getUpsToPost()
 		self.cursor.execute(query, {'postid':postid} )
 		result = []
