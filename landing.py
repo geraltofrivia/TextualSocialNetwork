@@ -139,14 +139,22 @@ class Welcome(threading.Thread):
 
 		self.send(message,buffer = True)
 		
-	def suspend(self,timer = 0):
-		print self.addr, "User %s is suspending" % self.userid
-		if timer != 0:
-			time.sleep(timer)
-			return
-		else:
-			while True:
-				a = None
+	def users(self,skip_subscribed = False):
+		'''This function will be used to display a list of all the users registered in the database
+		At a go, it will only display a certain number of users before confirming to continue further'''
+		users = self.database.get_all_users()
+		if skip_subscribed:
+			subscribed = self.database.get_subscriptions_of(self.userid)
+
+		message = ''
+		for user in users:
+			if skip_subscribed == True:
+				if user[0] in subscribed:
+					continue
+			if not user[0] == self.userid:
+				message = message + user[0] + '\t\t' + user[1] + '\n'
+		self.send(message,buffer = True)
+		return
 
 	def post(self):
 		'''In this function, the client will generate a post 
@@ -158,7 +166,7 @@ class Welcome(threading.Thread):
 
 		status = -3
 		while status < 0:
-			content = self.send(content_instruction,'post')
+			content = self.send(content_instruction,'main/post')
 		
 			if content == 'exit':
 				self.exit()
@@ -187,11 +195,11 @@ class Welcome(threading.Thread):
 			self.send(empty_instruction, buffer = True)
 
 		for post in posts:
-			message = message + post[2] + ': ' + post[1] + '\n   ' + str(post[4]) + ' +' + post[3] + ' #' + str(post[0]) + '\n\n'
+			message = message + post[2] + ': ' + post[1] + '\n   +' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n\n'
 			counter = counter + 1
 			if counter >= size:
 				message = message + next_instruction
-				command = self.send(message,'timeline',100)
+				command = self.send(message,'main/timeline',100)
 
 				message = ''
 				counter = 0
@@ -200,6 +208,8 @@ class Welcome(threading.Thread):
 					self.exit()
 				if command == 'cancel':
 					return False
+				if command == 'up':
+					self.up(True)
 
 		if len(message) > 0:
 			self.send(message, buffer = True)
@@ -214,7 +224,7 @@ class Welcome(threading.Thread):
 		
 		status = -3
 		while status < 0:
-			subsid = self.send(subsid_instruction,'subscribe',100)
+			subsid = self.send(subsid_instruction,'main/subscribe',100)
 
 			if subsid == 'exit':
 				self.exit()
@@ -232,22 +242,38 @@ class Welcome(threading.Thread):
 		self.send(success_instruction,buffer = True)
 		return True
 
-	def users(self,skip_subscribed = False):
-		'''This function will be used to display a list of all the users registered in the database
-		At a go, it will only display a certain number of users before confirming to continue further'''
-		users = self.database.get_all_users()
-		if skip_subscribed:
-			subscribed = self.database.get_subscriptions_of(self.userid)
+	def up(self, from_timeline = False):
+		'''This function will be used to 'up' a post
+		We expect the user to know the postid, which can be seen from the timeline'''
+		up_instruction = '''Please enter the post id of the post you want to 'up' '''
+		error_instruction = '''It seems that the postid you entered does not exist. Kindly recheck the enter'''
 
-		message = ''
-		for user in users:
-			if skip_subscribed == True:
-				if user[0] in subscribed:
-					continue
-			if not user[0] == self.userid:
-				message = message + user[0] + '\t\t' + user[1] + '\n'
-		self.send(message,buffer = True)
-		return
+		status = -3
+		if from_timeline:
+			prompt = 'main/timeline/up'
+		else:
+			prompt = 'main/up'
+		while status <0:
+			postid = self.send(up_instruction,prompt,20)
+
+			if postid == 'exit':
+				self.exit()
+			if postid == 'cancel':
+				return False
+
+			status = self.database.insert_new_up(postid,self.userid)
+			if status == -1:
+				self.send(error_instruction,buffer=True)
+
+
+	def suspend(self,timer = 0):
+		print self.addr, "User %s is suspending" % self.userid
+		if timer != 0:
+			time.sleep(timer)
+			return
+		else:
+			while True:
+				a = None
 
 	def run(self):
 		'''Flow will return here once the thread starts. Ask for login or register (input command)/
@@ -281,6 +307,8 @@ class Welcome(threading.Thread):
 				self.timeline()
 			if command == 'subscribe':
 				self.subscribe()
+			if command == 'up':
+				self.up()
 			if command == 'suspend':
 				self.suspend()
 			if command == 'help':
