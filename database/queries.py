@@ -22,8 +22,8 @@ create_subscriptions = '''
 									SUBSID TEXT NOT NULL
 									);'''
 
-create_pokes = '''
-								CREATE TABLE POKES (
+create_pings = '''
+								CREATE TABLE PINGS (
 									FROMID TEXT NOT NULL,
 									TOID TEXT NOT NULL
 									);'''
@@ -48,7 +48,7 @@ insert_subscription = '''INSERT INTO SUBSCRIPTIONS
 													(USERID, SUBSID) \
 													VALUES (:userid,:subsid) '''
 
-insert_poke = '''INSERT INTO POKES
+insert_ping = '''INSERT INTO PINGS
 									(FROMID, TOID) \
 									VALUES (:fromid,:toid) '''
 
@@ -74,16 +74,16 @@ all_subscriptions_of_user = '''SELECT USERID, SUBSID
 																FROM SUBSCRIPTIONS
 																WHERE USERID = :userid'''
 
-all_pokes_by_user = '''SELECT TOID
-												FROM POKES
+all_pings_by_user = '''SELECT TOID
+												FROM PINGS
 												WHERE FROMID = :userid'''
 
-all_pokes_to_user = '''SELECT FROMID
-												FROM POKES
+all_pings_to_user = '''SELECT FROMID
+												FROM PINGS
 												WHERE TOID = :userid'''
 
-all_pokes = '''SELECT FROMID, TOID
-								FROM POKES'''
+all_pings = '''SELECT FROMID, TOID
+								FROM PINGS'''
 																
 all_ups_to_post = '''SELECT USERID
 											FROM UPS
@@ -99,7 +99,7 @@ find_post = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 
 #Function to fetch create table queries
 def getCreateTable():
-	return [create_users,create_ups,create_pokes,create_subscriptions,create_posts]
+	return [create_users,create_ups,create_pings,create_subscriptions,create_posts]
 
 #Functions to fetch insert element queries
 def getInsertUser():
@@ -111,8 +111,8 @@ def getInsertPost():
 def getInsertSubscription():
 	return insert_subscription
 
-def getInsertPoke():
-	return insert_poke
+def getInsertPing():
+	return insert_ping
 
 def getInsertUp():
 	return insert_up
@@ -130,14 +130,14 @@ def getPostsByUser():
 def getSubscriptionsOfUser():
 	return all_subscriptions_of_user
 
-def getPokesByUser():
-	return all_pokes_by_user
+def getPingsByUser():
+	return all_pings_by_user
 
-def getPokesToUser():
-	return all_pokes_to_user
+def getPingsToUser():
+	return all_pings_to_user
 
-def getPokes():
-	return all_pokes
+def getPings():
+	return all_pings
 
 def getUpsToPost():
 	return all_ups_to_post

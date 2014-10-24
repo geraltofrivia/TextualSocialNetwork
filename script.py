@@ -43,9 +43,9 @@ database.insert_new_subscription('dad','mom')
 database.insert_new_subscription('dad','ian')
 database.insert_new_subscription('ian','geralt')
 
-database.insert_new_poke('geralt','ian')
-database.insert_new_poke('dad','mom')
-database.insert_new_poke('geralt','dad')
+database.insert_new_ping('geralt','ian')
+database.insert_new_ping('dad','mom')
+database.insert_new_ping('geralt','dad')
 
 print "USERS"
 users = database.get_all_users()
@@ -75,10 +75,10 @@ print "SUBSCRIPTIONS OF MOM"
 subs = database.get_subscriptions_of('mom')
 for sub in subs:
 	print sub
-print "POKES TO MOM"
-pokes = database.get_pokes_for('mom')
-for poke in pokes:
-	print poke
+print "PINGS TO MOM"
+pings = database.get_pings_for('mom')
+for ping in pings:
+	print ping
 print "POSTS FOR GERALT"
 posts = database.get_posts_for('geralt')
 for post in posts:
