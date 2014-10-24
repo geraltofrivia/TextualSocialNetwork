@@ -92,6 +92,11 @@ class Datastore(Helper):
 		else:
 			return -1
 
+	def is_not_empty(self,var):
+		if len(str(var)) < 1:
+			return -1
+		return var
+
 	def insert_new_user(self,userid,name,sex,password):
 		query = queries.getInsertUser()
 		userid = self.is_existing_userid(userid, reverse = True)
@@ -115,18 +120,18 @@ class Datastore(Helper):
 		self.db.commit()
 		return 0
 
-	def insert_new_post(self,userid,postid,content):
+	def insert_new_post(self,userid,content):
 		query = queries.getInsertPost()
 		userid = self.is_existing_userid(userid)
-		postid = self.checkText(postid)		
-		if userid == -1:
-			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
+		content = self.is_not_empty(content)
+		if content == -1:
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tcontent:',content
 			return -1
-		if postid == -1:
-			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
+		if userid == -1:
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tcontent:',content
 			return -2
 		timestamp = self.getNow()
-		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
+		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'content':content} )
 		self.db.commit()
 		return 0
 
@@ -144,15 +149,15 @@ class Datastore(Helper):
 		self.db.commit()
 		return 0
 
-	def insert_new_poke(self,fromid,toid):
-		query = queries.getInsertPoke()
+	def insert_new_ping(self,fromid,toid):
+		query = queries.getInsertPing()
 		fromid = self.is_existing_userid(fromid)
 		toid = self.is_existing_userid(toid)
 		if toid == -1:
-			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
+			print "(Database: Insert Ping):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
 			return -1
 		if fromid == -1:
-			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
+			print "(Database: Insert Ping):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
 			return -2
 		self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
 		self.db.commit()
@@ -242,31 +247,31 @@ class Datastore(Helper):
 			result.append(subscription[1])
 		return result
 
-	def get_pokes_by(self,userid):
-		'''Returns a list of userids of people whom this user has poked'''
-		query = queries.getPokesByUser()
+	def get_pings_by(self,userid):
+		'''Returns a list of userids of people whom this user has pinged'''
+		query = queries.getPingsByUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
 		for user in self.cursor:
 			result.append(user[0])
 		return result		
 
-	def get_pokes_for(self,userid):
-		'''Returns a list of userids who have poked this user'''
-		query = queries.getPokesToUser()
+	def get_pings_for(self,userid):
+		'''Returns a list of userids who have pinged this user'''
+		query = queries.getPingsToUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
 		for user in self.cursor:
 			result.append(user[0])
 		return result		
 	
-	def get_all_pokes(self):
-		'''Returns a list of tuple (from, to) of pokes in the database'''
-		query = queries.getPokes()
+	def get_all_pings(self):
+		'''Returns a list of tuple (from, to) of pings in the database'''
+		query = queries.getPings()
 		self.cursor.execute(query)
 		result = []
-		for poke in self.cursor:
-			result.append(poke)
+		for ping in self.cursor:
+			result.append(ping)
 		return result
 
 	def get_ups_for(self,postid):
