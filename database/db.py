@@ -91,58 +91,80 @@ class Datastore(Helper):
 		name = self.checkText(name)
 		sex = self.checkSex(sex)
 		password = self.checkText(password)
-		if not ( userid == -1 or name == -1 or sex == -1 or password == -1):
-			self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
-			self.db.commit()
-		else:
+
+		if userid == -1:
 			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
-			#WHAT TO DO NOW?
+			return -1
+		if name == -1:
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
+			return -2
+		if sex == -1:
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
+			return -3
+		if password == -1:
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
+			return -4
+		self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
+		self.db.commit()
+		return 0
 
 	def insert_new_post(self,userid,postid,content):
 		query = queries.getInsertPost()
 		userid = self.is_existing_userid(userid)
-		postid = self.checkText(postid)
-		if not ( userid == -1 or postid == -1):
-			timestamp = self.getNow()
-			self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
-			self.db.commit()
-		else:
+		postid = self.checkText(postid)		
+		if userid == -1:
 			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
-			#WHAT TO DO NOW?
+			return -1
+		if postid == -1:
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
+			return -2
+		timestamp = self.getNow()
+		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
+		self.db.commit()
+		return 0
 
 	def insert_new_subscription(self,userid,subsid):
 		query = queries.getInsertSubscription()
 		userid = self.is_existing_userid(userid)
 		subsid = self.is_existing_userid(subsid)
-		if not ( userid == -1 or subsid == -1 ):
-			self.cursor.execute(query, {'userid':userid,'subsid':subsid} )
-			self.db.commit()
-		else:
+		if userid == -1:
 			print "(Database: Insert Subscription):Improper Datatype, value rejected. userid:",userid,'\tsubsid:',subsid
-			#WHAT TO DO NOW?
+			return -1
+		if subsid == -1:
+			print "(Database: Insert Subscription):Improper Datatype, value rejected. userid:",userid,'\tsubsid:',subsid
+			return -2
+		self.cursor.execute(query, {'userid':userid,'subsid':subsid} )
+		self.db.commit()
+		return 0
 
 	def insert_new_poke(self,fromid,toid):
 		query = queries.getInsertPoke()
 		fromid = self.is_existing_userid(fromid)
 		toid = self.is_existing_userid(toid)
-		if not ( toid == -1 or fromid == -1 ):
-			self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
-			self.db.commit()
-		else:
+		if toid == -1:
 			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
-			#WHAT TO DO NOW?
+			return -1
+		if fromid == -1:
+			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
+			return -2
+		self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
+		self.db.commit()
+		return 0
 
 	def insert_new_up(self,postid,userid):
 		query = queries.getInsertUp()
 		postid = self.is_existing_postid(postid)
 		userid = self.is_existing_userid(userid)
-		if not ( postid == -1 or userid == -1 ):
-			self.cursor.execute(query, {'postid':postid,'userid':userid} )
-			self.db.commit()
-		else:
+		if postid == -1:
 			print "(Database: Insert Up):Improper Datatype, value rejected. postid:",postid,'\tuserid:',userid
-			#WHAT TO DO NOW?			
-
+			return -1
+		if userid == -1:
+			print "(Database: Insert Up):Improper Datatype, value rejected. postid:",postid,'\tuserid:',userid
+			return -2
+		self.cursor.execute(query, {'postid':postid,'userid':userid} )
+		self.db.commit()
+		return 0
+		
 	def get_all_users(self):
 		'''Return a list of tuple (userid,name,sex) for all users'''
 		query = queries.getAllUsers()
@@ -248,6 +270,18 @@ class Datastore(Helper):
 		for ups in self.cursor:
 			result.append(ups[0])
 		return result
+
+
+	def check_credentials(self,userid,password):
+		'''Returns True/False if the userid and password match'''
+		query = queries.getFindUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for user in self.cursor:
+			result.append(user)
+		if len(result) <= 0:
+			return False	
+		return result[0][3] == password
 
 	def exit(self):
 		self.db.close()
