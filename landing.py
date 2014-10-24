@@ -175,7 +175,7 @@ class Welcome(threading.Thread):
 		'''Here we will display all the posts that ought to be displayed to every user.
 		The posts will be fetched from the users whom self.user has subscribed to.
 		Not all the posts will be shown in one go. Instead, we'll go 10 at a time(by default)
-		Format to print a post is " %(userid)s: %(content)s\n\t%(timestamp)s, +%(ups)d, #%(postid)d\n\n" '''
+		Format to print a post is " %(userid)s: %(content)s\n\t%+(ups)d, %(timestamp)s, #%(postid)d\n\n" '''
 		next_instruction = '''Enter 'next' to see next batch of posts'''
 		empty_instruction = '''It seems that your timeline is empty. Why not subscribe to other users to view their posts on your timeline?\nYou know, keep up with your friends\n'''
 
@@ -221,7 +221,8 @@ class Welcome(threading.Thread):
 			if subsid == 'cancel':
 				return False
 			if subsid == 'users':
-				self.users()
+				self.users(True)
+				continue
 
 			status = self.database.insert_new_subscription(self.userid,subsid)
 			if status == -2:
@@ -231,13 +232,18 @@ class Welcome(threading.Thread):
 		self.send(success_instruction,buffer = True)
 		return True
 
-	def users(self):
+	def users(self,skip_subscribed = False):
 		'''This function will be used to display a list of all the users registered in the database
 		At a go, it will only display a certain number of users before confirming to continue further'''
 		users = self.database.get_all_users()
+		if skip_subscribed:
+			subscribed = self.database.get_subscriptions_of(self.userid)
 
 		message = ''
 		for user in users:
+			if skip_subscribed == True:
+				if user[0] in subscribed:
+					continue
 			if not user[0] == self.userid:
 				message = message + user[0] + '\t\t' + user[1] + '\n'
 		self.send(message,buffer = True)
