@@ -156,28 +156,37 @@ class Welcome(threading.Thread):
 		self.send(message,buffer = True)
 		return
 
-	def post(self):
-		'''In this function, the client will generate a post 
-		which will then be shown to timelines of people.
-		Since he has already logged in, we won't ask for his userid. 
-		We will generate a postid automatically and the only input thus required is the text itself''' 
-		content_instruction = '''Please enter the text you want to post'''
-		empty_content_instruction = '''We're sorry but you need to enter some content to post'''
+	def pings(self,size = 20):
+		'''This function will fetch all of the pings that are pointed to the client.
+		From within the function, he can ping some user as well'''
+		next_instruction = '''Enter 'next' to see next batch of pings'''
+		empty_instruction = '''It seems that you have not yet been pinged by any user. Why not initiate it yourself?\nEnter 'ping' to ping any user'''
 
-		status = -3
-		while status < 0:
-			content = self.send(content_instruction,'main/post')
-		
-			if content == 'exit':
-				self.exit()
-			if content == 'cancel':
-				return False
+		counter = 0
+		message = ''
+		pings = self.database.get_pings_for(self.userid)
 
-			status = self.database.insert_new_post(self.userid,content)
-			#print self.addr,"(Post:)status: %s" % status
+		if len(pings) < 1:
+			self.send(empty_instruction, buffer = True)
 
-		print self.addr,"User %s just posted something" %self.userid
+		for ping in pings:
+			message = message + ping
+			counter = counter + 1
+			if counter >= size:
+				message = message + next_instruction
+				command = self.send(message,'main/pings',100)
+
+				if command == 'exit':
+					self.exit()
+				if command == 'cancel':
+					return False
+				if command == 'ping':
+					self.ping(True)
+
+		if len(message) > 0:
+			self.send(message, buffer = True)
 		return True
+
 
 	def timeline(self, size = 10):
 		'''Here we will display all the posts that ought to be displayed to every user.
@@ -215,6 +224,29 @@ class Welcome(threading.Thread):
 			self.send(message, buffer = True)
 		return True
 
+	def post(self):
+		'''In this function, the client will generate a post 
+		which will then be shown to timelines of people.
+		Since he has already logged in, we won't ask for his userid. 
+		We will generate a postid automatically and the only input thus required is the text itself''' 
+		content_instruction = '''Please enter the text you want to post'''
+		empty_content_instruction = '''We're sorry but you need to enter some content to post'''
+
+		status = -3
+		while status < 0:
+			content = self.send(content_instruction,'main/post')
+		
+			if content == 'exit':
+				self.exit()
+			if content == 'cancel':
+				return False
+
+			status = self.database.insert_new_post(self.userid,content)
+			#print self.addr,"(Post:)status: %s" % status
+
+		print self.addr,"User %s just posted something" %self.userid
+		return True
+
 	def subscribe(self):
 		'''This function will be used to subscribe to other users.
 		We expect the client to specify the userid and not usernames (to prevent duplication)'''
@@ -242,6 +274,34 @@ class Welcome(threading.Thread):
 		self.send(success_instruction,buffer = True)
 		return True
 
+	def ping(self, from_pings = False):
+		'''This function will enable the user to send pings to other users.
+		We will assume that the user knows the id of the other userid_instruction
+		The parameter is an indication in the prompt regarding where he/she will return to after this operation'''
+		ping_instruction = '''Please enter the userid of the person you wish to ping'''
+		error_instruction = '''It seems that the userid was incorrect. The user doesn't exist. Kindly recheck and enter'''
+		success_instruction = '''The user was successfully pinged. Expect a ping back once he logs in :smile: '''
+
+		status = -3
+		if from_pings:
+			prompt = 'main/pings/ping'
+		else:
+			prompt = 'main/ping'
+
+		while status < 0:
+			toid = self.send(ping_instruction,prompt,20)
+
+			if toid == 'exit':
+				self.exit()
+			if toid == 'cancel':
+				return False
+
+			status = self.database.insert_new_ping(self.userid,toid)
+			if status == -1:
+				self.send(error_instruction,buffer = True)
+
+		self.send(success_instruction,buffer = True)
+
 	def up(self, from_timeline = False):
 		'''This function will be used to 'up' a post
 		We expect the user to know the postid, which can be seen from the timeline'''
@@ -253,6 +313,7 @@ class Welcome(threading.Thread):
 			prompt = 'main/timeline/up'
 		else:
 			prompt = 'main/up'
+		
 		while status <0:
 			postid = self.send(up_instruction,prompt,20)
 
@@ -313,5 +374,9 @@ class Welcome(threading.Thread):
 				self.suspend()
 			if command == 'help':
 				self.help()
+			if command == 'pings':
+				self.pings()
+			if command == 'ping':
+				self.ping()
 
 
