@@ -13,45 +13,69 @@ class Welcome(threading.Thread):
 		self.addr = addr
 		self.logged_in = False
 		self.userid = None
+		self.buffer = ''
 		
-	def get_command(self,first_attempt = True):
+	def send(self,message,prompt = 'main',length = 1024,buffer = False):
+		'''This function is used to implement a prompt on the client side.
+		It masks client.send.	We now follow a (send,send,receive) UX. The second send is solely for the prompt
+		prompt - The value that denotes where the client ought to be when he next types in a command
+		length -  The length of text to receive from the client
+		buffer - If buffer is true, we don't want to send the message just yet.
+							We want to store it somewhere and send it off with the next send.
+							The situation will arise when the server will have something to say but nothing to receive
+							The reason for this is the (send,recv) UX we setup'''
+
+		if buffer:
+			self.buffer = self.buffer + '\n' + message
+			return
+		if self.logged_in:
+			prompt = self.userid + '@' + prompt
+		prompt = prompt + ':$ '
+		if len(self.buffer) > 0:
+			message = self.buffer + '\n' + message
+			self.buffer = ''
+		message = message + '#$%' + prompt
+		self.client.send(message)
+		#self.client.send(prompt)
+		return self.client.recv(length)
+		
+	def get_instruction(self,first_attempt = True,independent = True):
 		'''Receive the client socket, make a new thread and return control to the main program'''
 		welcome_instruction = '''Hello, to start using this service, you will have to either login or register yourself.\nPlease proceed by entering 'login' or 'register' to do the same.\nIf at any time you wish to discontinue using the service, please enter 'exit' '''
-		
-		instruction = '''You are not yet logged in. Enter either 'login' or 'register' to continue, or 'exit' to stop'''
-		
-		if first_attempt:
-			self.client.send(welcome_instruction,len(welcome_instruction))
+		error_instruction = '''You are not yet logged in. Enter either 'login' or 'register' to continue, or 'exit' to stop'''
+		further_instruction = '''What do you want to do now?'''
+
+		if not self.logged_in:
+			if first_attempt:
+				command = self.send(welcome_instruction,'main',100)
+			else:
+				command = self.send(error_instruction,'main',100)
+			return command
 		else:
-			self.client.send(instruction,len(instruction))
-		command = self.client.recv(100)
-		return command
-	
+			command = self.send(further_instruction,'main',100)
+			return command
+		
 	def login(self):
 		'''In this function, you send the client the instruction to login.
 		Then expect a username and then a password'''
-		login_instruction = '[SKIP] Login \n'
 		userid_instruction = 'Please type in your user id'
 		passwd_instruction = 'Please type in your password'
 		error_instruction = 'Incorrect userid / password. Please retry'
-		success_instruction = '[SKIP] You are now logged in \n'
+		success_instruction = 'You are now logged in'
 		
 		#self.client.send(login_instruction,len(login_instruction)+1)
 		while True:
-			self.client.send(userid_instruction,len(userid_instruction)+1)
-			userid = self.client.recv(100)
-			self.client.send(passwd_instruction,len(passwd_instruction)+1)
-			password = self.client.recv(100)
+			userid = self.send(userid_instruction,'login',100)
+			password = self.send(passwd_instruction,'login',100)
+			
 			if userid == 'exit' or password == 'exit':
 				self.exit()
 			if self.database.check_credentials(userid,password):
 				print self.addr,'User %s has successfully logged in' % userid
-				#self.client.send(success_instruction,len(success_instruction)+1)
+				self.send(success_instruction,buffer = True)
 				self.userid = userid
 				self.logged_in = True
 				return True
-			#else:
-				#self.client.send(error_instruction,len(error_instruction)+1)
 
 	def register(self):
 		'''In this function we input values from the client and push it on the database,
@@ -61,39 +85,63 @@ class Welcome(threading.Thread):
 		usernm_instruction = "Please enter a name to be known by"
 		gender_instruction = "Please enter 'male', 'female' depending upon your sex"
 		passwd_instruction = "Please type in a password. Keep it secret. Keep it safe"
-		userid_already_in_use = "This userid already exists. Please select another one"
 		success_instruction = '[SKIP] You are now registered \n'
 		
 		status = -5
 		while status < 0:
 			#self.client.send(register_instruction,len(register_instruction)+1)
 			if status <= -1: 
-				self.client.send(userid_instruction,len(userid_instruction)+1)
-				userid = self.client.recv(100)
+				userid = self.send(userid_instruction,'register',100)
 			if status <= -2:
-				self.client.send(usernm_instruction,len(usernm_instruction)+1)
-				usernm = self.client.recv(100)
+				usernm = self.send(usernm_instruction,'register',100)
 			if status <= -3:
-				self.client.send(gender_instruction,len(gender_instruction)+1)
-				gender = self.client.recv(100)
+				gender = self.send(gender_instruction,'register',100)
 			if status <= -4:
-				self.client.send(passwd_instruction,len(passwd_instruction)+1)
-				passwd = self.client.recv(100)
+				passwd = self.send(passwd_instruction,'register',100)
 
 			if userid == 'exit' or usernm == 'exit' or gender == 'exit' or passwd == 'exit':
 				self.exit()
 
 			if userid == 'cancel' or usernm == 'cancel' or gender == 'cancel' or passwd == 'cancel':
-				return
+				return False
 
 			status = self.database.insert_new_user(userid,usernm,gender,passwd)
-			print self.addr,"(Register:)status: %s" % status
 
 		print self.addr,"User %s registered successfully" %userid
-		#self.client.send(success_instruction,len(success_instruction)+1)
-		return
+		self.send(success_instruction,buffer = True)
+		return True
 
+	def get_help(self,operation = None,independent = True):
+		'''This function is used to provide the user with all the things that he can do with the system.
+		 List of all the functions and their description is to be given to the client.
+		 Further, description of one single function can also be extracted using independent and operation args'''
+
+		instruction = '''To interact with the system, you will have to type in commands.\nAt any point of time, you can type in 'exit' to exit the system, and 'cancel' to cancel that operation\n'''
+		description = []
+		description.append(('post','\t\tTo post content on the netork. It will be seen by the people who have subscribed to you\n'))		
+		description.append(('poke','\t\tTo send a poke to a specific user\n'))
+		description.append(('timeline','\tTo view the posts of users you have subscribed to\n'))
+		description.append(('up','\t\tTo support/like a post. You can only like a post once\n'))
+		description.append(('users','\t\tTo view a list of all the users in the database\n'))
+		
+		if operation == None:
+			message = instruction
+			for command in description:
+				message = message+command[0]+str(command[1])
+			message = message
+
+		else:
+			message = ''
+			for command in description:
+				if command[0] == operation:
+					message = message+command[0]+str(command[1])
+			if independent:
+				message = message
+
+		self.send(message,buffer = True)
+		
 	def suspend(self,timer = 0):
+		print self.addr, "Going in suspension"
 		if timer != 0:
 			time.sleep(timer)
 			return
@@ -101,26 +149,76 @@ class Welcome(threading.Thread):
 			while True:
 				a = None
 
+	def post(self):
+		'''In this function, the client will generate a post 
+		which will then be shown to timelines of people.
+		Since he has already logged in, we won't ask for his userid. 
+		We will generate a postid automatically and the only input thus required is the text itself''' 
+		content_instruction = '''Please enter the text you want to post'''
+		empty_content_instruction = '''We're sorry but you need to enter some content to post'''
+
+		status = -3
+		while status < 0:
+			content = self.send(content_instruction,'post')
+		
+			if content == 'exit':
+				self.exit()
+			if content == 'cancel':
+				return False
+
+			status = self.database.insert_new_post(self.userid,content)
+			#print self.addr,"(Post:)status: %s" % status
+
+		print self.addr,"User %s just posted something" %self.userid
+		return True
+
+	def timeline(self):
+		'''Here we will display all the posts that ought to be displayed to every user.
+		The posts will be fetched from the users whom self.user has subscribed to.'''
+
+	def subscribe(self):
+		'''This function will be used to subscribe to other users.'''
+
+	def users(self):
+		'''This function will be used to display a list of all the users registered in the database
+		At a go, it will only display a certain number of users before confirming to continue further'''
+		users = self.database.get_all_users()
+
+		message = ''
+		for user in users:
+			if not user[0] == self.userid
+			message = message + user[0] + '\t\t' + user[1] + '\n'
+		self.send(message,buffer = True)
+		return
 
 	def run(self):
 		'''Flow will return here once the thread starts. Ask for login or register (input command)/
 		Then login/register function called. Have them both interface with the Datastore class.'''
 		first_attempt = True
 		while not self.logged_in:
-			command = self.get_command(first_attempt)
+			command = self.get_instruction(first_attempt)
 			if command == 'login':
 				self.login()
 				break
 			if command == 'register':
 				self.register()
 				self.login()
-				break
 			if command == 'exit':
 				self.exit()
-				break
 			first_attempt = False
 
 		'''The user has logged in.
-		As of now, just suspend the user till infinity'''
-		self.suspend()
+		On any call to run(), the function will start from here if the user has logged in. 
+		So, the 'cancel' command works just fine by sending calling this function again'''
+
+		first_attempt = False
+		self.get_help()
+		while True:
+			command = self.get_instruction()
+			if command == 'post':
+				self.post()
+			if command == 'users':
+				self.users()
+	
+
 

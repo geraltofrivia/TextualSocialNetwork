@@ -92,6 +92,11 @@ class Datastore(Helper):
 		else:
 			return -1
 
+	def is_not_empty(self,var):
+		if len(str(var)) < 1:
+			return -1
+		return var
+
 	def insert_new_user(self,userid,name,sex,password):
 		query = queries.getInsertUser()
 		userid = self.is_existing_userid(userid, reverse = True)
@@ -115,18 +120,18 @@ class Datastore(Helper):
 		self.db.commit()
 		return 0
 
-	def insert_new_post(self,userid,postid,content):
+	def insert_new_post(self,userid,content):
 		query = queries.getInsertPost()
 		userid = self.is_existing_userid(userid)
-		postid = self.checkText(postid)		
-		if userid == -1:
-			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
+		content = self.is_not_empty(content)
+		if content == -1:
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tcontent:',content
 			return -1
-		if postid == -1:
-			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
+		if userid == -1:
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tcontent:',content
 			return -2
 		timestamp = self.getNow()
-		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
+		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'content':content} )
 		self.db.commit()
 		return 0
 

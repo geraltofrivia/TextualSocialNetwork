@@ -12,7 +12,7 @@ create_posts = '''
 								CREATE TABLE POSTS (
 									TIMESTAMP TEXT NOT NULL,
 									USERID TEXT NOT NULL,
-									POSTID TEXT PRIMARY KEY NOT NULL,
+									POSTID INTEGER PRIMARY KEY AUTOINCREMENT,
 									CONTENT TEXT NOT NULL
 									);'''
 
@@ -41,8 +41,8 @@ insert_user = '''INSERT INTO USERS
 									VALUES (:userid, :name, :sex, :password) '''
 
 insert_post = '''INSERT INTO POSTS
-									(TIMESTAMP, USERID, POSTID, CONTENT) \
-									VALUES (:timestamp,:userid,:postid,:content) '''
+									(TIMESTAMP, USERID, CONTENT) \
+									VALUES (:timestamp,:userid,:content) '''
 
 insert_subscription = '''INSERT INTO SUBSCRIPTIONS
 													(USERID, SUBSID) \
