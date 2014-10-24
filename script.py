@@ -1,8 +1,8 @@
-from db import Datastore
+from database.db import Datastore
 import os
 
-if os.path.isfile("data.db"):			
-	os.remove('data.db')
+if os.path.isfile("database/data.db"):			
+	os.remove('database/data.db')
 
 database = Datastore()
 

@@ -6,7 +6,7 @@ import datetime
 
 class Helper:
 	def checkText(self,var):
-		if var.isalnum():
+		if var.isalnum() and len(var) > 1:
 			return var
 		else:
 			return -1
@@ -49,10 +49,10 @@ class Datastore(Helper):
 	def __init__(self):
 		flag_init = False		
 		#If the database doesn't yet exist, set flag.
-		if not os.path.isfile("data.db"):			
+		if not os.path.isfile("database/data.db"):			
 			flag_init = True
 
-		self.db = sqlite3.connect('data.db')
+		self.db = sqlite3.connect('database/data.db')
 		self.cursor = self.db.cursor()
 		print "(Database):Database Connected"
 		if flag_init:
@@ -61,33 +61,40 @@ class Datastore(Helper):
 				self.cursor.execute(table)
 				print "(Database):Table created successfully"
 
-	def is_existing_userid(self,userid):
-		'''Returns var or -1 verifying if the userid exists in the database'''
+	def is_existing_userid(self,userid,reverse = False):
+		'''Returns var or -1 verifying if the userid exists in the database
+		If reverse - True: return var if user doesnt exist & return -1 if user exists
+		If reverse - False: return -1 if user doesnt exist & return var if user exists'''
 		query = queries.getFindUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
 		for user in self.cursor:
 			result.append(user)
-		if len(result) > 0:
+		bool_result = len(result) > 0
+		if bool_result != reverse:
+			#Logical XOR between two boolean values, for our purpose
 			return userid
 		else:
 			return -1
 
-	def is_existing_postid(self,postid):
-		'''Returns var or -1, verifying if the postid exists in the database'''
+	def is_existing_postid(self,postid,reverse = False):
+		'''Returns var or -1 verifying if the userid exists in the database
+		If reverse - True: return var if user doesnt exist & return -1 if user exists
+		If reverse - False: return -1 if user doesnt exist & return var if user exists'''
 		query = queries.getFindPost()
 		self.cursor.execute(query, {'postid':postid} )
 		result = []
 		for post in self.cursor:
 			result.append(post)
-		if len(result) > 0:
+		bool_result = len(result) > 0 
+		if bool_result != reverse:
 			return postid
 		else:
 			return -1
 
 	def insert_new_user(self,userid,name,sex,password):
 		query = queries.getInsertUser()
-		userid = self.checkText(userid)
+		userid = self.is_existing_userid(userid, reverse = True)
 		name = self.checkText(name)
 		sex = self.checkSex(sex)
 		password = self.checkText(password)
