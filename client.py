@@ -2,7 +2,7 @@ import socket
 import string
 
 s = socket.socket()
-port = 9005
+port = 9006
 host = socket.gethostname()
 
 print "**Attempting a connection"

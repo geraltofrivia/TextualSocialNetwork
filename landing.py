@@ -36,7 +36,6 @@ class Welcome(threading.Thread):
 			self.buffer = ''
 		message = message + '#$%' + prompt
 		self.client.send(message)
-		#self.client.send(prompt)
 		return self.client.recv(length)
 		
 	def get_instruction(self,first_attempt = True,independent = True):
@@ -111,7 +110,7 @@ class Welcome(threading.Thread):
 		self.send(success_instruction,buffer = True)
 		return True
 
-	def get_help(self,operation = None,independent = True):
+	def help(self,operation = None,independent = True):
 		'''This function is used to provide the user with all the things that he can do with the system.
 		 List of all the functions and their description is to be given to the client.
 		 Further, description of one single function can also be extracted using independent and operation args'''
@@ -141,7 +140,7 @@ class Welcome(threading.Thread):
 		self.send(message,buffer = True)
 		
 	def suspend(self,timer = 0):
-		print self.addr, "Going in suspension"
+		print self.addr, "User %s is suspending" % self.userid
 		if timer != 0:
 			time.sleep(timer)
 			return
@@ -172,12 +171,65 @@ class Welcome(threading.Thread):
 		print self.addr,"User %s just posted something" %self.userid
 		return True
 
-	def timeline(self):
+	def timeline(self, size = 10):
 		'''Here we will display all the posts that ought to be displayed to every user.
-		The posts will be fetched from the users whom self.user has subscribed to.'''
+		The posts will be fetched from the users whom self.user has subscribed to.
+		Not all the posts will be shown in one go. Instead, we'll go 10 at a time(by default)
+		Format to print a post is " %(userid)s: %(content)s\n\t%(timestamp)s, +%(ups)d, #%(postid)d\n\n" '''
+		next_instruction = '''Enter 'next' to see next batch of posts'''
+		empty_instruction = '''It seems that your timeline is empty. Why not subscribe to other users to view their posts on your timeline?\nYou know, keep up with your friends\n'''
+
+		counter = 0
+		message = ''
+		posts = self.database.get_posts_for(self.userid,get_ups = True)
+
+		if len(posts) < 1:
+			self.send(empty_instruction, buffer = True)
+
+		for post in posts:
+			message = message + post[2] + ': ' + post[1] + '\n   ' + str(post[4]) + ' +' + post[3] + ' #' + str(post[0]) + '\n\n'
+			counter = counter + 1
+			if counter >= size:
+				message = message + next_instruction
+				command = self.send(message,'timeline',100)
+
+				message = ''
+				counter = 0
+
+				if command == 'exit':
+					self.exit()
+				if command == 'cancel':
+					return False
+
+		if len(message) > 0:
+			self.send(message, buffer = True)
+		return True
 
 	def subscribe(self):
-		'''This function will be used to subscribe to other users.'''
+		'''This function will be used to subscribe to other users.
+		We expect the client to specify the userid and not usernames (to prevent duplication)'''
+		subsid_instruction = '''Please enter the userid of the user you want to subscribe to'''
+		error_subsid_instruction = '''The entered user does not exist. Please enter a valid username.\nYou may want to run 'users' to fetch the list of registered users'''
+		success_instruction = '''You have successfully subscribed to the user. Your timeline will now contain all his/her posts'''
+		
+		status = -3
+		while status < 0:
+			subsid = self.send(subsid_instruction,'subscribe',100)
+
+			if subsid == 'exit':
+				self.exit()
+			if subsid == 'cancel':
+				return False
+			if subsid == 'users':
+				self.users()
+
+			status = self.database.insert_new_subscription(self.userid,subsid)
+			if status == -2:
+				self.send(error_subsid_instruction,buffer = True)
+
+		print self.addr,"User %s subscribed to another user" %self.userid
+		self.send(success_instruction,buffer = True)
+		return True
 
 	def users(self):
 		'''This function will be used to display a list of all the users registered in the database
@@ -186,8 +238,8 @@ class Welcome(threading.Thread):
 
 		message = ''
 		for user in users:
-			if not user[0] == self.userid
-			message = message + user[0] + '\t\t' + user[1] + '\n'
+			if not user[0] == self.userid:
+				message = message + user[0] + '\t\t' + user[1] + '\n'
 		self.send(message,buffer = True)
 		return
 
@@ -212,13 +264,20 @@ class Welcome(threading.Thread):
 		So, the 'cancel' command works just fine by sending calling this function again'''
 
 		first_attempt = False
-		self.get_help()
+		self.help()
 		while True:
 			command = self.get_instruction()
 			if command == 'post':
 				self.post()
 			if command == 'users':
 				self.users()
-	
+			if command == 'timeline':
+				self.timeline()
+			if command == 'subscribe':
+				self.subscribe()
+			if command == 'suspend':
+				self.suspend()
+			if command == 'help':
+				self.help()
 
 
