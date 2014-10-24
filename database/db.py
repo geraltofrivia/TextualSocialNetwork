@@ -52,7 +52,7 @@ class Datastore(Helper):
 		if not os.path.isfile("database/data.db"):			
 			flag_init = True
 
-		self.db = sqlite3.connect('database/data.db')
+		self.db = sqlite3.connect('database/data.db', check_same_thread=False)
 		self.cursor = self.db.cursor()
 		print "(Database):Database Connected"
 		if flag_init:

@@ -3,7 +3,7 @@ import threading
 import os
 import landing
 
-connection_port = 9006
+connection_port = 9010
 
 #Initialize the socket which accepts connection and binds client to a thread.
 connection = socket.socket()
@@ -14,9 +14,10 @@ connection.listen(5000)
 
 while True:
 	client, addr  = connection.accept()
-	print "Got connection from", addr
+	print addr, "Connected"
+	#Now we want to thread to a new branch and continue handling the client there
 	server = landing.Welcome(client,addr)
-	server.run()
+	server.start()
 	'''#Break into a new thread.
 	#Return after login
 	#Call the interface/command read function....

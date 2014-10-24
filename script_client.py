@@ -2,7 +2,7 @@ import socket
 import string
 
 s = socket.socket()
-port = 9006
+port = 9010
 host = socket.gethostname()
 
 print "**Attempting a connection"
@@ -12,8 +12,8 @@ s.connect((host,port))
 while True:
 	message = s.recv(1024)
 	print message
-	if message.split()[0] == '[SKIP]':
-		continue
+	#if message.split()[0] == '[SKIP]':
+	#	continue
 	command = raw_input()
 	s.send(command)
 

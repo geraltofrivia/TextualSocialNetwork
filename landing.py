@@ -25,7 +25,6 @@ class Welcome(threading.Thread):
 		else:
 			self.client.send(instruction,len(instruction))
 		command = self.client.recv(100)
-		print command
 		return command
 	
 	def login(self):
@@ -37,7 +36,7 @@ class Welcome(threading.Thread):
 		error_instruction = 'Incorrect userid / password. Please retry'
 		success_instruction = '[SKIP] You are now logged in \n'
 		
-		self.client.send(login_instruction,len(login_instruction)+1)
+		#self.client.send(login_instruction,len(login_instruction)+1)
 		while True:
 			self.client.send(userid_instruction,len(userid_instruction)+1)
 			userid = self.client.recv(100)
@@ -46,13 +45,13 @@ class Welcome(threading.Thread):
 			if userid == 'exit' or password == 'exit':
 				self.exit()
 			if self.database.check_credentials(userid,password):
-				print 'User %s has successfully logged in' % userid
-				self.client.send(success_instruction,len(success_instruction)+1)
+				print self.addr,'User %s has successfully logged in' % userid
+				#self.client.send(success_instruction,len(success_instruction)+1)
 				self.userid = userid
 				self.logged_in = True
 				return True
-			else:
-				self.client.send(error_instruction,len(error_instruction)+1)
+			#else:
+				#self.client.send(error_instruction,len(error_instruction)+1)
 
 	def register(self):
 		'''In this function we input values from the client and push it on the database,
@@ -67,7 +66,7 @@ class Welcome(threading.Thread):
 		
 		status = -5
 		while status < 0:
-			self.client.send(register_instruction,len(register_instruction)+1)
+			#self.client.send(register_instruction,len(register_instruction)+1)
 			if status <= -1: 
 				self.client.send(userid_instruction,len(userid_instruction)+1)
 				userid = self.client.recv(100)
@@ -88,10 +87,10 @@ class Welcome(threading.Thread):
 				return
 
 			status = self.database.insert_new_user(userid,usernm,gender,passwd)
-			print "(Register:)status: %s" % status
+			print self.addr,"(Register:)status: %s" % status
 
-		print "(Welcome:) User %s registered successfully" %userid
-		self.client.send(success_instruction,len(success_instruction)+1)
+		print self.addr,"User %s registered successfully" %userid
+		#self.client.send(success_instruction,len(success_instruction)+1)
 		return
 
 	def suspend(self,timer = 0):
