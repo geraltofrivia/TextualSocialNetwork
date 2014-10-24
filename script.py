@@ -1,10 +1,10 @@
-import db
+from database.db import Datastore
 import os
 
-if os.path.isfile("data.db"):			
-	os.remove('data.db')
+if os.path.isfile("database/data.db"):			
+	os.remove('database/data.db')
 
-database = db.Datastore()
+database = Datastore()
 
 database.insert_new_user('geralt','priyansh','m','pass')
 database.insert_new_user('ian','hor','m','root')
@@ -82,5 +82,7 @@ for post in posts:
 print "TESTING REFERENCE CHECK"
 print database.is_existing_userid('geralto')
 print database.is_existing_userid('geralt')
-
+print "CHECK PASSWORD"
+print database.check_credentials('geralt','pass')
+print database.check_credentials('geralt','pas')
 database.exit()

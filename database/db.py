@@ -6,7 +6,7 @@ import datetime
 
 class Helper:
 	def checkText(self,var):
-		if var.isalnum():
+		if var.isalnum() and len(var) > 1:
 			return var
 		else:
 			return -1
@@ -49,10 +49,10 @@ class Datastore(Helper):
 	def __init__(self):
 		flag_init = False		
 		#If the database doesn't yet exist, set flag.
-		if not os.path.isfile("data.db"):			
+		if not os.path.isfile("database/data.db"):			
 			flag_init = True
 
-		self.db = sqlite3.connect('data.db')
+		self.db = sqlite3.connect('database/data.db', check_same_thread=False)
 		self.cursor = self.db.cursor()
 		print "(Database):Database Connected"
 		if flag_init:
@@ -61,88 +61,117 @@ class Datastore(Helper):
 				self.cursor.execute(table)
 				print "(Database):Table created successfully"
 
-	def is_existing_userid(self,userid):
-		'''Returns var or -1 verifying if the userid exists in the database'''
+	def is_existing_userid(self,userid,reverse = False):
+		'''Returns var or -1 verifying if the userid exists in the database
+		If reverse - True: return var if user doesnt exist & return -1 if user exists
+		If reverse - False: return -1 if user doesnt exist & return var if user exists'''
 		query = queries.getFindUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
 		for user in self.cursor:
 			result.append(user)
-		if len(result) > 0:
+		bool_result = len(result) > 0
+		if bool_result != reverse:
+			#Logical XOR between two boolean values, for our purpose
 			return userid
 		else:
 			return -1
 
-	def is_existing_postid(self,postid):
-		'''Returns var or -1, verifying if the postid exists in the database'''
+	def is_existing_postid(self,postid,reverse = False):
+		'''Returns var or -1 verifying if the userid exists in the database
+		If reverse - True: return var if user doesnt exist & return -1 if user exists
+		If reverse - False: return -1 if user doesnt exist & return var if user exists'''
 		query = queries.getFindPost()
 		self.cursor.execute(query, {'postid':postid} )
 		result = []
 		for post in self.cursor:
 			result.append(post)
-		if len(result) > 0:
+		bool_result = len(result) > 0 
+		if bool_result != reverse:
 			return postid
 		else:
 			return -1
 
 	def insert_new_user(self,userid,name,sex,password):
 		query = queries.getInsertUser()
-		userid = self.checkText(userid)
+		userid = self.is_existing_userid(userid, reverse = True)
 		name = self.checkText(name)
 		sex = self.checkSex(sex)
 		password = self.checkText(password)
-		if not ( userid == -1 or name == -1 or sex == -1 or password == -1):
-			self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
-			self.db.commit()
-		else:
+
+		if userid == -1:
 			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
-			#WHAT TO DO NOW?
+			return -1
+		if name == -1:
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
+			return -2
+		if sex == -1:
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
+			return -3
+		if password == -1:
+			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
+			return -4
+		self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
+		self.db.commit()
+		return 0
 
 	def insert_new_post(self,userid,postid,content):
 		query = queries.getInsertPost()
 		userid = self.is_existing_userid(userid)
-		postid = self.checkText(postid)
-		if not ( userid == -1 or postid == -1):
-			timestamp = self.getNow()
-			self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
-			self.db.commit()
-		else:
+		postid = self.checkText(postid)		
+		if userid == -1:
 			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
-			#WHAT TO DO NOW?
+			return -1
+		if postid == -1:
+			print "(Database: Insert Post):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid,'\tcontent:',content
+			return -2
+		timestamp = self.getNow()
+		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'postid':postid,'content':content} )
+		self.db.commit()
+		return 0
 
 	def insert_new_subscription(self,userid,subsid):
 		query = queries.getInsertSubscription()
 		userid = self.is_existing_userid(userid)
 		subsid = self.is_existing_userid(subsid)
-		if not ( userid == -1 or subsid == -1 ):
-			self.cursor.execute(query, {'userid':userid,'subsid':subsid} )
-			self.db.commit()
-		else:
+		if userid == -1:
 			print "(Database: Insert Subscription):Improper Datatype, value rejected. userid:",userid,'\tsubsid:',subsid
-			#WHAT TO DO NOW?
+			return -1
+		if subsid == -1:
+			print "(Database: Insert Subscription):Improper Datatype, value rejected. userid:",userid,'\tsubsid:',subsid
+			return -2
+		self.cursor.execute(query, {'userid':userid,'subsid':subsid} )
+		self.db.commit()
+		return 0
 
 	def insert_new_poke(self,fromid,toid):
 		query = queries.getInsertPoke()
 		fromid = self.is_existing_userid(fromid)
 		toid = self.is_existing_userid(toid)
-		if not ( toid == -1 or fromid == -1 ):
-			self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
-			self.db.commit()
-		else:
+		if toid == -1:
 			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
-			#WHAT TO DO NOW?
+			return -1
+		if fromid == -1:
+			print "(Database: Insert Poke):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
+			return -2
+		self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
+		self.db.commit()
+		return 0
 
 	def insert_new_up(self,postid,userid):
 		query = queries.getInsertUp()
 		postid = self.is_existing_postid(postid)
 		userid = self.is_existing_userid(userid)
-		if not ( postid == -1 or userid == -1 ):
-			self.cursor.execute(query, {'postid':postid,'userid':userid} )
-			self.db.commit()
-		else:
+		if postid == -1:
 			print "(Database: Insert Up):Improper Datatype, value rejected. postid:",postid,'\tuserid:',userid
-			#WHAT TO DO NOW?			
-
+			return -1
+		if userid == -1:
+			print "(Database: Insert Up):Improper Datatype, value rejected. postid:",postid,'\tuserid:',userid
+			return -2
+		self.cursor.execute(query, {'postid':postid,'userid':userid} )
+		self.db.commit()
+		return 0
+		
 	def get_all_users(self):
 		'''Return a list of tuple (userid,name,sex) for all users'''
 		query = queries.getAllUsers()
@@ -248,6 +277,18 @@ class Datastore(Helper):
 		for ups in self.cursor:
 			result.append(ups[0])
 		return result
+
+
+	def check_credentials(self,userid,password):
+		'''Returns True/False if the userid and password match'''
+		query = queries.getFindUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for user in self.cursor:
+			result.append(user)
+		if len(result) <= 0:
+			return False	
+		return result[0][3] == password
 
 	def exit(self):
 		self.db.close()

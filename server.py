@@ -5,8 +5,6 @@ import os
 connection_port = 9000
 client_port = 10000
 
-
-
 def receive(client,addr):
 	print "Initiating a receiver"
 	while True:
@@ -26,8 +24,8 @@ def transfer_connection(client,addr,port):
 	connection.bind((host,port))
 	connection.listen(1)
 
-	#Notify the client about the updated connection
-	print port
+	#Notify the client about the updated print
+	connection port
 	client.send(str(port),len(str(port))+1)							#Add 1 to length to solve a minor bug. Client receiving 1000 in place of 10000
 	client.close()
 	#Wait for the client to connect to the new socket
@@ -43,23 +41,28 @@ def transfer_control(client,addr):
 	print "THREADING DONE!" 
 	return
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
+'''Starting block of our program. 
+This block initiates a socket on port 9000 and waits for clients to come.
+As soon as they do, we transfer the client into a new thread and push it to login/register modules. 
+Hereby we ready the main thread to accept more connections on the socket.'''
 #Initialize the socket which accepts connection and binds client to a thread.
 connection = socket.socket()
 host = socket.gethostname()
 port = connection_port
 connection.bind((host,port))	
-connection.listen(5)
-
+connection.listen(5000)
 
 while True:
 	client, addr  = connection.accept()
 	print "Got connection from", addr
-	message = "Thank you for connecting."
+	#Break into a new thread.
+	#Return after login
+	#Call the interface/command read function....
+	message = "Thank you for connecting to "
 	client.send(message, len(message))
-	
-	#Now the client has connected. We would want to transfer this into a new socket and hold the client, while clearing the main socket for more clients
+	'''Now the client has connected. We would want to transfer this into a new socket 
+	and hold the client, while clearing the main socket for more clients'''
 	client,addr = transfer_connection(client,addr,client_port)
 	thread = transfer_control(client,addr)
 

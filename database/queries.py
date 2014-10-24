@@ -89,7 +89,7 @@ all_ups_to_post = '''SELECT USERID
 											FROM UPS
 											WHERE POSTID = :postid'''				
 
-find_user = '''SELECT USERID, NAME, SEX
+find_user = '''SELECT USERID, NAME, SEX, PASSWORD
 								FROM USERS
 								WHERE USERID = :userid'''
 
