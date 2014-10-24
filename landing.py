@@ -170,12 +170,15 @@ class Welcome(threading.Thread):
 			self.send(empty_instruction, buffer = True)
 
 		for ping in pings:
-			message = message + ping
+			message = message + '\n' + ping
 			counter = counter + 1
 			if counter >= size:
-				message = message + next_instruction
+				message = message + '\n' + next_instruction
 				command = self.send(message,'main/pings',100)
 
+				message = ''
+				counter = 0
+				
 				if command == 'exit':
 					self.exit()
 				if command == 'cancel':
