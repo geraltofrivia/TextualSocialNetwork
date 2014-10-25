@@ -11,10 +11,16 @@ class Welcome(threading.Thread):
 		
 		self.client = client
 		self.addr = addr
-		self.logged_in = False
-		self.userid = None
-		self.buffer = ''
+		self.first_attempt = True
+		self.need_help = True
 		
+		self.userid = None
+		self.logged_in = False
+
+		self.discontinue = False
+		
+		self.buffer = ''
+
 	def send(self,message,prompt = 'main',length = 1024,buffer = False):
 		'''This function is used to implement a prompt on the client side.
 		It masks client.send.	We now follow a (send,send,receive) UX. The second send is solely for the prompt
@@ -36,6 +42,8 @@ class Welcome(threading.Thread):
 			self.buffer = ''
 		message = message + '#$%' + prompt
 		self.client.send(message)
+		if self.discontinue:
+			return 
 		return self.client.recv(length).lower().strip()
 		
 	def get_instruction(self,first_attempt = True,independent = True):
@@ -74,7 +82,20 @@ class Welcome(threading.Thread):
 				self.send(success_instruction,buffer = True)
 				self.userid = userid
 				self.logged_in = True
+				self.need_help = True
 				return True
+
+	def logout(self):
+		'''In this function we throw the user out of the logged in state.
+		And reset the variables appropriately'''
+		success_instruction = '''You have now logged out of the system.'''
+		
+		self.userd = None
+		self.logged_in = False
+
+		print self.addr, "User %s is exiting" % self.userid
+		self.send(success_instruction,buffer = True)
+		return True
 
 	def register(self):
 		'''In this function we input values from the client and push it on the database,
@@ -457,38 +478,44 @@ class Welcome(threading.Thread):
 				self.send(error_instruction,buffer=True)
 
 
-	def suspend(self,timer = 0):
-		print self.addr, "User %s is suspending" % self.userid
-		if timer != 0:
-			time.sleep(timer)
-			return
-		else:
-			while True:
-				a = None
+	def exit(self):
+		'''This function is used to finally end the client connection'''
+		exit_message = 'Closing the connection'
+		warning_instruction = 'Are you sure you want to exit? \nPress Yes to continue, No to cancel'
+
+		command = self.send(warning_instruction,'main/exit',100)
+
+		if command == 'exit':
+			self.exit()
+		if command == 'cancel' or command == 'no' or command == 'back':
+			return False
+		if command == 'yes':
+				print self.addr, "User %s is exiting" % self.userid
+				self.discontinue = True
+				self.send(exit_message,'exit')
+
+		return
 
 	def run(self):
 		'''Flow will return here once the thread starts. Ask for login or register (input command)/
 		Then login/register function called. Have them both interface with the Datastore class.'''
 		first_attempt = True
-		while not self.logged_in:
-			command = self.get_instruction(first_attempt)
-			if command == 'login':
-				self.login()
-				break
-			if command == 'register':
-				self.register()
-				self.login()
-			if command == 'exit':
-				self.exit()
-			first_attempt = False
-
-		'''The user has logged in.
-		On any call to run(), the function will start from here if the user has logged in. 
-		So, the 'cancel' command works just fine by sending calling this function again'''
-
-		first_attempt = False
-		self.help()
-		while True:
+		while not self.discontinue :
+			if not self.logged_in:
+				command = self.get_instruction(first_attempt)
+				if command == 'login' :
+					self.login()
+				if command == 'register' :
+					self.register()
+					self.login()
+				if command == 'exit':
+					self.exit()
+				first_attempt = False
+				continue
+			#These commands will be executed only after the user has logged in
+			if self.need_help:
+				self.help()
+				self.need_help = False
 			command = self.get_instruction()
 			if command == 'post':
 				self.post()
@@ -500,8 +527,6 @@ class Welcome(threading.Thread):
 				self.subscribe()
 			if command == 'up':
 				self.up()
-			if command == 'suspend':
-				self.suspend()
 			if command == 'help':
 				self.help()
 			if command == 'pings':
@@ -512,3 +537,11 @@ class Welcome(threading.Thread):
 				self.view(view_self = True)
 			if command == 'view':
 				self.view()
+			if command == 'logout':
+				self.logout()
+			if command == 'exit':
+				self.logout()
+				self.exit()
+
+		'''This part of the code will be accessed only while closing the connection'''
+		self.client.close
