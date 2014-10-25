@@ -76,7 +76,7 @@ class Welcome(threading.Thread):
 			password = self.send(passwd_instruction,'login',100)
 			
 			if userid == 'exit' or password == 'exit':
-				self.exit()
+				return self.exit()
 			if self.database.check_credentials(userid,password):
 				print self.addr,'User %s has successfully logged in' % userid
 				self.send(success_instruction,buffer = True)
@@ -120,7 +120,7 @@ class Welcome(threading.Thread):
 				passwd = self.send(passwd_instruction,'register',100)
 
 			if userid == 'exit' or usernm == 'exit' or gender == 'exit' or passwd == 'exit':
-				self.exit()
+				return self.exit()
 
 			if userid == 'cancel' or usernm == 'cancel' or gender == 'cancel' or passwd == 'cancel':
 				return False
@@ -203,7 +203,7 @@ class Welcome(threading.Thread):
 				counter = 0
 				
 				if command == 'exit':
-					self.exit()
+					return self.exit()
 				if command == 'cancel':
 					return False
 				if command == 'ping':
@@ -240,7 +240,7 @@ class Welcome(threading.Thread):
 				counter = 0
 
 				if command == 'exit':
-					self.exit()
+					return self.exit()
 				if command == 'cancel':
 					return False
 				if command == 'up':
@@ -256,13 +256,15 @@ class Welcome(threading.Thread):
 		View others profile - their posts, their data, their pings to you and your pings to them (pings are private)
 		If a person types their userid in the main commandline, this function will be called with no arguments
 		If a person types view, then the arguments will be fetched by this person will be userid'''
-		next_instruction = '''Now, you can choose to view more data of the user. Simply type in the any of the following command that you want to see\n'Posts','Subscribers','Subscriptions','Ups' '''
+		next_instruction = '''Now, you can choose to view more data of the user. Simply type in the any of the following command that you want to see\n'Posts','Pings',Subscribers','Subscriptions','Ups' '''
+		userid_instruction = 'Please enter the userid of the person whose profile you want to see'
+		error_userid_instruction = 'This userid does not exist. Please recheck'
 		empty_posts = 'This user has not posted anything yet'
 		empty_ups = 'This user has not given an up to any post'
 		empty_subscribers = 'This user has no subscribers yet'
 		empty_subscriptions = 'The user has not subscribed to anyone yet'
-		userid_instruction = 'Please enter the userid of the person whose profile you want to see'
-		error_userid_instruction = 'This userid does not exist. Please recheck'
+		empty_pings_from = 'The user has not been pinged by anyone yet'
+		empty_pings_to = 'The user has not pinged anyone yet'
 
 		if view_self:
 			userid = self.userid
@@ -273,7 +275,7 @@ class Welcome(threading.Thread):
 			userid = self.send(userid_instruction,'main/view',100)
 			
 			if userid == 'exit':
-				self.exit()
+				return self.exit()
 			if userid == 'cancel':
 				return
 
@@ -287,12 +289,15 @@ class Welcome(threading.Thread):
 		ups = self.database.get_ups_of(userid,get_ups = True)
 		subscribed_to = self.database.get_subscriptions_of(userid)
 		subscribers = self.database.get_subscribers_of(userid)
+		pings_to_others = self.database.get_pings_by(userid)
+		pings_from_others = self.database.get_pings_for(userid)
 
 		message = ''
 		counter = 0
 
 		message = user_data[0] + '\nname-' + user_data[1] + '\n' + user_data[2]
-		message = message + ', Subscribers: #' + str(len(subscribers)) + ', Subscriptions: #' + str(len(subscribed_to)) + '\n\n'
+		message = message + ', Subscribers: #' + str(len(subscribers)) + ', Subscriptions: #' + str(len(subscribed_to)) + '\n'
+		message = message + 'Pings: \tsent: #' + str(len(pings_to_others)) + ', received: #' + str(len(pings_from_others)) + '\n\n'
 	
 		message = message + 'Recent Posts by ' + userid.upper() +': \n'
 		if len(posts) < 1:
@@ -319,10 +324,10 @@ class Welcome(threading.Thread):
 		#Take further commands
 
 		while True:
-			command = self.send(next_instruction,'main/view',100).lower()
+			command = self.send(next_instruction,'main/view',100)
 
 			if command == 'exit':
-				self.exit()
+				return self.exit()
 			if command == 'clear' or command == 'back':
 				return False
 			if command == 'posts':
@@ -373,6 +378,33 @@ class Welcome(threading.Thread):
 				self.send(message,buffer = True)
 				message = ''
 				continue
+			if command == 'pings':
+				message = 'Pings For ' + userid + ': '
+				counter = 0
+				if len(pings_from_others) == 0:
+					message = message + empty_pings_from
+				for user in pings_from_others:
+					message = message + user + ', '
+					counter = counter + 1
+					if counter >= 10:
+						message = message + '\n\t'
+						counter = 0
+				message = message + '\n'
+				message = message + 'Pings To ' + userid + ': '
+				counter = 0
+				if len(pings_to_others) == 0:
+					message = message + empty_pings_to
+				for user in pings_to_others:
+					message = message + user + ', '
+					counter = counter + 1
+					if counter >= 10:
+						message = message + '\n\t'
+						counter = 0
+				message = message + '\n'
+				self.send(message,buffer = True)
+				message = ''
+				continue
+
 
 
 	def post(self):
@@ -388,7 +420,7 @@ class Welcome(threading.Thread):
 			content = self.send(content_instruction,'main/post')
 		
 			if content == 'exit':
-				self.exit()
+				return self.exit()
 			if content == 'cancel':
 				return False
 
@@ -443,7 +475,7 @@ class Welcome(threading.Thread):
 			toid = self.send(ping_instruction,prompt,20)
 
 			if toid == 'exit':
-				self.exit()
+				return self.exit()
 			if toid == 'cancel':
 				return False
 
@@ -469,7 +501,7 @@ class Welcome(threading.Thread):
 			postid = self.send(up_instruction,prompt,20)
 
 			if postid == 'exit':
-				self.exit()
+				return self.exit()
 			if postid == 'cancel':
 				return False
 
@@ -509,7 +541,7 @@ class Welcome(threading.Thread):
 					self.register()
 					self.login()
 				if command == 'exit':
-					self.exit()
+					return self.exit()
 				first_attempt = False
 				continue
 			#These commands will be executed only after the user has logged in
