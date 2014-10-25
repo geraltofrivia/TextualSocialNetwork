@@ -2,7 +2,7 @@ import socket
 import string
 
 s = socket.socket()
-port = 9006
+port = 9008
 host = socket.gethostname()
 
 print "**Attempting a connection"
@@ -14,6 +14,3 @@ while True:
 	print str(message.split('#$%')[0])
 	command = raw_input(str(message.split('#$%')[1]))
 	s.send(command)
-
-
-

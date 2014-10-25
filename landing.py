@@ -36,7 +36,7 @@ class Welcome(threading.Thread):
 			self.buffer = ''
 		message = message + '#$%' + prompt
 		self.client.send(message)
-		return self.client.recv(length)
+		return self.client.recv(length).lower().strip()
 		
 	def get_instruction(self,first_attempt = True,independent = True):
 		'''Receive the client socket, make a new thread and return control to the main program'''
@@ -118,10 +118,12 @@ class Welcome(threading.Thread):
 		instruction = '''To interact with the system, you will have to type in commands.\nAt any point of time, you can type in 'exit' to exit the system, and 'cancel' to cancel that operation\n'''
 		description = []
 		description.append(('post','\t\tTo post content on the netork. It will be seen by the people who have subscribed to you\n'))		
-		description.append(('poke','\t\tTo send a poke to a specific user\n'))
+		description.append(('ping','\t\tTo send a ping to a specific user\n'))
+		description.append(('subscribe','\tTo subscribe to a users post.\n'))
 		description.append(('timeline','\tTo view the posts of users you have subscribed to\n'))
-		description.append(('up','\t\tTo support/like a post. You can only like a post once\n'))
+		description.append(('up','\t\tTo support/like a post.\n'))
 		description.append(('users','\t\tTo view a list of all the users in the database\n'))
+		description.append(('view','\t\tTo view a users profile page.\n'))
 		
 		if operation == None:
 			message = instruction
@@ -170,7 +172,7 @@ class Welcome(threading.Thread):
 			self.send(empty_instruction, buffer = True)
 
 		for ping in pings:
-			message = message + '\n' + ping
+			message = message + ping + '\n'
 			counter = counter + 1
 			if counter >= size:
 				message = message + '\n' + next_instruction
@@ -226,6 +228,131 @@ class Welcome(threading.Thread):
 		if len(message) > 0:
 			self.send(message, buffer = True)
 		return True
+
+	def view(self,view_self = False):
+		'''This function is used to view a person's profile. There are two states in the function
+		View self profile - your posts, your data, the posts you liked, people you've pinged and people who have pinged you
+		View others profile - their posts, their data, their pings to you and your pings to them (pings are private)
+		If a person types their userid in the main commandline, this function will be called with no arguments
+		If a person types view, then the arguments will be fetched by this person will be userid'''
+		next_instruction = '''Now, you can choose to view more data of the user. Simply type in the any of the following command that you want to see\n'Posts','Subscribers','Subscriptions','Ups' '''
+		empty_posts = 'This user has not posted anything yet'
+		empty_ups = 'This user has not given an up to any post'
+		empty_subscribers = 'This user has no subscribers yet'
+		empty_subscriptions = 'The user has not subscribed to anyone yet'
+		userid_instruction = 'Please enter the userid of the person whose profile you want to see'
+		error_userid_instruction = 'This userid does not exist. Please recheck'
+
+		if view_self:
+			userid = self.userid
+		else:
+			userid = -1
+
+		while userid == -1:
+			userid = self.send(userid_instruction,'main/view',100)
+			
+			if userid == 'exit':
+				self.exit()
+			if userid == 'cancel':
+				return
+
+			userid = self.database.is_existing_userid(userid)
+			if userid == -1:
+				self.send(error_userid_instruction,buffer = True)
+
+		#We now have a valid userid
+		user_data = self.database.get_user_data(userid)
+		posts = self.database.get_posts_of(userid,get_ups =True)
+		ups = self.database.get_ups_of(userid,get_ups = True)
+		subscribed_to = self.database.get_subscriptions_of(userid)
+		subscribers = self.database.get_subscribers_of(userid)
+
+		message = ''
+		counter = 0
+
+		message = user_data[0] + '\nname-' + user_data[1] + '\n' + user_data[2]
+		message = message + ', Subscribers: #' + str(len(subscribers)) + ', Subscriptions: #' + str(len(subscribed_to)) + '\n\n'
+	
+		message = message + 'Recent Posts by ' + userid.upper() +': \n'
+		if len(posts) < 1:
+			message = message + empty_posts + '\n\n'
+		for post in posts:
+			message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+			counter = counter + 1
+			if counter >= 5:
+				break
+
+		message = message + '\nRecent Ups by ' + userid.upper() +': \n'
+		if len(ups) < 1:
+			message = message + empty_ups + '\n\n'
+		counter = 0
+		for post in ups:
+			message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+			counter = counter + 1
+			if counter >= 2:
+				break		
+
+		self.send(message,buffer = True)
+		message = ''
+		
+		#Take further commands
+
+		while True:
+			command = self.send(next_instruction,'main/view',100).lower()
+
+			if command == 'exit':
+				self.exit()
+			if command == 'clear' or command == 'back':
+				return False
+			if command == 'posts':
+				message = 'Recent Posts by ' + userid +': \n'
+				if len(posts) < 1:
+					message = message + empty_posts + '\n\n'
+				for post in posts:
+					message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+				self.send(message,buffer = True)
+				message = ''
+				continue
+			if command == 'ups':
+				message = 'Recent Ups by ' + userid +': \n'
+				if len(ups) < 1:
+					message = message + empty_ups + '\n\n'
+				for post in ups:
+					message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+				self.send(message,buffer = True)
+				message = ''
+				continue
+			if command == 'subscribers':
+				message = 'Subscribers of '  + userid +': '
+				counter = 0
+				if len(subscribers) == 0:
+					message = message + empty_subscribers
+				for user in subscribers:
+					message = message + str(user[0]) + ', '
+					counter = counter + 1
+					if counter >= 10:
+						message = message + '\n\t'
+						counter = 0
+				message = message + '\n'
+				self.send(message,buffer = True)
+				message = ''
+				continue
+			if command == 'subscriptions':
+				message = 'Subscription of ' + userid + ': '
+				counter = 0
+				if len(subscribed_to) == 0:
+					message = message + empty_subscriptions
+				for user in subscribed_to:
+					message = message + user + ', '
+					counter = counter + 1
+					if counter >= 10:
+						message = message + '\n\t'
+						counter = 0
+				message = message + '\n'
+				self.send(message,buffer = True)
+				message = ''
+				continue
+
 
 	def post(self):
 		'''In this function, the client will generate a post 
@@ -381,5 +508,7 @@ class Welcome(threading.Thread):
 				self.pings()
 			if command == 'ping':
 				self.ping()
-
-
+			if command == self.userid:
+				self.view(view_self = True)
+			if command == 'view':
+				self.view()
