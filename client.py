@@ -1,29 +1,20 @@
 import socket
 import string
 
-def transfer(port):
-	server = socket.socket()
-	host = socket.gethostname()
-	server.connect((host,string.atoi(port,base = 10)))
-	print s.recv(1024)
-	s.close()
-	return server
-
 s = socket.socket()
-port = 9000
+port = 9008
 host = socket.gethostname()
+continue_flag = True
 
 print "**Attempting a connection"
 s.connect((host,port))
 
-print s.recv(1024)
-port = s.recv(1024)
-print port
-server = transfer(port)
-msg = ""
-while True:
-	msg = raw_input()
-	server.send(msg,len(msg)+1)
-print "Exited"
-s.close()
-
+#Just have one send one receive interface
+while continue_flag:
+	message =  s.recv(1024)
+	print str(message.split('#$%')[0])
+	if 'main/exit' in str(message.split('#$%')[1]):
+		print "Attempting Exit"
+		continue_flag = False
+	command = raw_input(str(message.split('#$%')[1]))
+	s.send(command)
