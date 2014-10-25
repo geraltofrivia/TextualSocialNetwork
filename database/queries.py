@@ -25,13 +25,15 @@ create_subscriptions = '''
 create_pings = '''
 								CREATE TABLE PINGS (
 									FROMID TEXT NOT NULL,
-									TOID TEXT NOT NULL
+									TOID TEXT NOT NULL,
+									TIMESTAMP TEXT NOT NULL
 									);'''
 
 create_ups = '''
 								CREATE TABLE UPS (
 									POSTID TEXT NOT NULL,
-									USERID TEXT NOT NULL
+									USERID TEXT NOT NULL,
+									TIMESTAMP TEXT NOT NULL
 									);'''
 
 ########################################INSERT QUERIES########################################
@@ -49,12 +51,12 @@ insert_subscription = '''INSERT INTO SUBSCRIPTIONS
 													VALUES (:userid,:subsid) '''
 
 insert_ping = '''INSERT INTO PINGS
-									(FROMID, TOID) \
-									VALUES (:fromid,:toid) '''
+									(FROMID, TOID, TIMESTAMP) \
+									VALUES (:fromid,:toid,:timestamp) '''
 
 insert_up = '''INSERT INTO UPS
-									(POSTID, USERID) \
-									VALUES (:postid,:userid) '''
+									(POSTID, USERID,TIMESTAMP) \
+									VALUES (:postid,:userid,:timestamp) '''
 
 ########################################QUERIES########################################
 
@@ -74,20 +76,33 @@ all_subscriptions_of_user = '''SELECT USERID, SUBSID
 																FROM SUBSCRIPTIONS
 																WHERE USERID = :userid'''
 
+all_subscribers_of_user = '''SELECT USERID
+															FROM SUBSCRIPTIONS
+															WHERE SUBSID = :subsid'''																
+
 all_pings_by_user = '''SELECT TOID
 												FROM PINGS
-												WHERE FROMID = :userid'''
+												WHERE FROMID = :userid
+												ORDER BY TIMESTAMP DESC'''
 
 all_pings_to_user = '''SELECT FROMID
 												FROM PINGS
-												WHERE TOID = :userid'''
+												WHERE TOID = :userid
+												ORDER BY TIMESTAMP DESC'''
 
 all_pings = '''SELECT FROMID, TOID
-								FROM PINGS'''
+								FROM PINGS
+								ORDER BY TIMESTAMP DESC'''
 																
 all_ups_to_post = '''SELECT USERID
 											FROM UPS
-											WHERE POSTID = :postid'''				
+											WHERE POSTID = :postid
+											ORDER BY TIMESTAMP DESC'''
+
+all_ups_of_user = '''SELECT USERID, POSTID
+											FROM UPS
+											WHERE USERID = :userid
+											ORDER BY TIMESTAMP DESC'''															
 
 find_user = '''SELECT USERID, NAME, SEX, PASSWORD
 								FROM USERS
@@ -130,6 +145,9 @@ def getPostsByUser():
 def getSubscriptionsOfUser():
 	return all_subscriptions_of_user
 
+def getSubscribersOfUser():
+	return all_subscribers_of_user
+
 def getPingsByUser():
 	return all_pings_by_user
 
@@ -141,6 +159,9 @@ def getPings():
 
 def getUpsToPost():
 	return all_ups_to_post
+
+def getUpsOfUser():
+	return all_ups_of_user
 
 def getFindUser():
 	return find_user

@@ -35,6 +35,7 @@ database.insert_new_up('5','dad')
 database.insert_new_up('5','mom')
 database.insert_new_up('5','ian')
 database.insert_new_up('5','geralt')
+database.insert_new_up('3','geralt')
 
 database.insert_new_subscription('geralt','dad')
 database.insert_new_subscription('geralt','ian')
@@ -89,12 +90,12 @@ print "POSTS"
 posts = database.get_all_posts(True)
 for post in posts:
 	print post
-print "UPS FOR 110"
-ups =  database.get_ups_for('110')
+print "UPS FOR 5"
+ups =  database.get_ups_for('5')
 for user in ups:
 	print user
-print "UPS FOR 100"
-ups = database.get_ups_for('100')
+print "UPS FOR 1"
+ups = database.get_ups_for('1')
 for user in ups:
 	print user
 print "POSTS OF GERALT"
@@ -123,4 +124,7 @@ print database.is_existing_userid('geralt')
 print "CHECK PASSWORD"
 print database.check_credentials('geralt','pass')
 print database.check_credentials('geralt','pas')
+print "CHECK GET UPS OF GERALT"
+ups = database.get_ups_of('geralt',True)
+print ups
 database.exit()

@@ -159,7 +159,8 @@ class Datastore(Helper):
 		if fromid == -1:
 			print "(Database: Insert Ping):Improper Datatype, value rejected. fromid:",fromid,'\ttoid:',toid
 			return -2
-		self.cursor.execute(query, {'fromid':fromid,'toid':toid} )
+		timestamp = self.getNow()
+		self.cursor.execute(query, {'fromid':fromid,'toid':toid,'timestamp':timestamp} )
 		self.db.commit()
 		return 0
 
@@ -173,7 +174,8 @@ class Datastore(Helper):
 		if userid == -1:
 			print "(Database: Insert Up):Improper Datatype, value rejected. postid:",postid,'\tuserid:',userid
 			return -2
-		self.cursor.execute(query, {'postid':postid,'userid':userid} )
+		timestamp = self.getNow()
+		self.cursor.execute(query, {'postid':postid,'userid':userid,'timestamp':timestamp} )
 		self.db.commit()
 		return 0
 		
@@ -185,6 +187,17 @@ class Datastore(Helper):
 		for user in self.cursor:
 			result.append(user)			
 		return result
+
+	def get_user_data(self,userid):
+		'''Returns one tuple containing the entry in users table for this user'''
+		query = queries.getFindUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for user in self.cursor:
+			result.append(user)
+		if len(result) < 1:
+			return 0
+		return result[0]
 
 	def get_all_posts(self,get_ups=False):
 		'''Returns a list of tuple (postid,text,userid,timestamp) for all posts. 
@@ -204,6 +217,19 @@ class Datastore(Helper):
 				set.append(len(ups))
 				final.append(set)
 			return final
+		return result
+
+	def get_post_data(self,postid,get_ups = False):
+		'''Returns one tuple containing the entry in posts table for this post'''
+		query = queries.getFindPost()
+		self.cursor.execute(query, {'postid':postid} )
+		result = []
+		for user in self.cursor:
+			for element in user:
+				result.append(element)
+		if get_ups:
+			ups = self.get_ups_for(result[0])
+			result.append(len(ups))
 		return result
 
 	def get_posts_of(self,userid,get_ups=False):
@@ -239,12 +265,21 @@ class Datastore(Helper):
 
 	def get_subscriptions_of(self,userid):
 		'''Return a list of userid whose posts are to be fetched for this user
-		In other words, returns a list of subscriptions for this user'''
+		In other words, returns a list of subscriptions for this user (Whom he has subscribed to)'''
 		query = queries.getSubscriptionsOfUser()
 		self.cursor.execute(query, {'userid':userid} )
 		result = []
 		for subscription in self.cursor:
 			result.append(subscription[1])
+		return result
+
+	def get_subscribers_of(self,subsid):
+		'''Return a list of users who have subscribed to this user'''
+		query = queries.getSubscribersOfUser()
+		self.cursor.execute(query, {'subsid':subsid} )
+		result = []
+		for subscription in self.cursor:
+			result.append(subscription)
 		return result
 
 	def get_pings_by(self,userid):
@@ -283,6 +318,18 @@ class Datastore(Helper):
 			result.append(ups[0])
 		return result
 
+	def get_ups_of(self,userid,get_ups = True):
+		'''Returns a list of posts who have been upped by this user'''
+		query =queries.getUpsOfUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for post in self.cursor:
+			result.append(post)
+		final = []
+		for up in result:
+			data =  self.get_post_data(up[1],get_ups)
+			final.append(data)
+		return final
 
 	def check_credentials(self,userid,password):
 		'''Returns True/False if the userid and password match'''
