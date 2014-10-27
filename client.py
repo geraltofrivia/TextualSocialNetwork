@@ -1,9 +1,13 @@
 import socket
 import string
+import sys
 
 s = socket.socket()
 port = 9000
-host = socket.gethostname()
+if len(sys.argv) > 1:
+	host = sys.argv[0]
+else:
+	host = raw_input("Pleas enter the address of the server:\t")
 continue_flag = True
 
 print "**Attempting a connection"
