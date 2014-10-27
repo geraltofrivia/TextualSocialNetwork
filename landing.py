@@ -84,6 +84,8 @@ class Welcome(threading.Thread):
 				self.logged_in = True
 				self.need_help = True
 				return True
+			else:
+				self.send(error_instruction,buffer = True)
 
 	def logout(self):
 		'''In this function we throw the user out of the logged in state.
@@ -140,12 +142,15 @@ class Welcome(threading.Thread):
 		description = []
 		description.append(('post','\t\tTo post content on the netork. It will be seen by the people who have subscribed to you\n'))		
 		description.append(('ping','\t\tTo send a ping to a specific user\n'))
+		description.append(('pings','\t\tTo view all the pings sent to you\n'))
 		description.append(('subscribe','\tTo subscribe to a users post.\n'))
 		description.append(('timeline','\tTo view the posts of users you have subscribed to\n'))
 		description.append(('up','\t\tTo support/like a post.\n'))
 		description.append(('users','\t\tTo view a list of all the users in the database\n'))
 		description.append(('view','\t\tTo view a users profile page.\n'))
-		
+		description.append(('logout','\t\tTo log yourself out of the system\n'))
+		description.append(('exit','\t\tTo exit out of the application.\n'))
+
 		if operation == None:
 			message = instruction
 			for command in description:
@@ -520,11 +525,12 @@ class Welcome(threading.Thread):
 		if command == 'exit':
 			self.exit()
 		if command == 'cancel' or command == 'no' or command == 'back':
-			return False
+			return
 		if command == 'yes':
+				self.logout()
 				print self.addr, "User %s is exiting" % self.userid
 				self.discontinue = True
-				self.send(exit_message,'exit')
+				self.send(exit_message,'main/bye-bye')
 
 		return
 
@@ -572,7 +578,6 @@ class Welcome(threading.Thread):
 			if command == 'logout':
 				self.logout()
 			if command == 'exit':
-				self.logout()
 				self.exit()
 
 		'''This part of the code will be accessed only while closing the connection'''
