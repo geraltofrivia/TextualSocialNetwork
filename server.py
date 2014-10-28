@@ -3,7 +3,7 @@ import threading
 import os
 import landing
 
-connection_port = 9000
+connection_port = 9001
 
 #Initialize the socket which accepts connection and binds client to a thread.
 connection = socket.socket()

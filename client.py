@@ -3,7 +3,7 @@ import string
 import sys
 
 s = socket.socket()
-port = 9000
+port = 9001
 if len(sys.argv) > 1:
 	host = sys.argv[0]
 else:
@@ -21,5 +21,8 @@ while continue_flag:
 		print "Attempting Exit"
 		continue_flag = False
 		continue
-	command = raw_input(str(message.split('#$%')[1]))
+	while True:
+		command = raw_input(str(message.split('#$%')[1]))
+		if len(command) > 1:
+			break
 	s.send(command)
