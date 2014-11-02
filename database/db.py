@@ -105,7 +105,7 @@ class Datastore(Helper):
 			return -1
 		return var
 
-	def insert_new_user(self,userid,name,sex,password,visible = 'True'):
+	def insert_new_user(self,userid,name,sex,password,visible = 'true'):
 		query = queries.getInsertUser()
 		userid = self.is_existing_userid(userid, reverse = True)
 		name = self.checkText(name)
@@ -193,7 +193,9 @@ class Datastore(Helper):
 		self.cursor.execute(query)
 		result = []
 		for user in self.cursor:
-			result.append(user)			
+			if not user[-1].lower() == 'true':
+				continue			
+			result.append(user)
 		return result
 
 	def get_user_data(self,userid):
@@ -339,7 +341,7 @@ class Datastore(Helper):
 			final.append(data)
 		return final
 
-	def update_user(self,userid,visible):
+	def update_user_visible(self,userid,visible):
 		'''Update the user setting for being visible or not'''
 		query = queries.getUpdateUser()
 		userid = self.is_existing_userid(userid)
