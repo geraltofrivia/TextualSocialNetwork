@@ -179,6 +179,8 @@ class Welcome(threading.Thread):
 			if skip_subscribed == True:
 				if user[0] in subscribed:
 					continue
+			if not user[-1].lower() == 'true':
+				continue
 			if not user[0] == self.userid:
 				message = message + user[0] + '\t\t' + user[1] + '\n'
 		self.send(message,buffer = True)
@@ -514,6 +516,10 @@ class Welcome(threading.Thread):
 			if status == -1:
 				self.send(error_instruction,buffer=True)
 
+	def settings(self):
+		'''In this function we will show user his preferences and 
+		allow him to edit them as per required'''
+		
 
 	def exit(self):
 		'''This function is used to finally end the client connection'''
@@ -575,6 +581,8 @@ class Welcome(threading.Thread):
 				self.view(view_self = True)
 			if command == 'view':
 				self.view()
+			if command == 'settings':
+				self.settings()
 			if command == 'logout':
 				self.logout()
 			if command == 'exit':

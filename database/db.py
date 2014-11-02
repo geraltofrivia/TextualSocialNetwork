@@ -33,6 +33,14 @@ class Helper:
 		else:
 			return -1
 
+	def checkBoolean(self,var):
+		if var.lower()[0] == 't':
+			return 'True'
+		if var.lower()[0] == 'f':
+			return 'False'
+		else:
+			return -1
+
 	def getNow(self):
 		return str(datetime.datetime.now())
 
@@ -97,7 +105,7 @@ class Datastore(Helper):
 			return -1
 		return var
 
-	def insert_new_user(self,userid,name,sex,password):
+	def insert_new_user(self,userid,name,sex,password,visible = 'True'):
 		query = queries.getInsertUser()
 		userid = self.is_existing_userid(userid, reverse = True)
 		name = self.checkText(name)
@@ -116,7 +124,7 @@ class Datastore(Helper):
 		if password == -1:
 			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
 			return -4
-		self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
+		self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password,'visible':visible} )
 		self.db.commit()
 		return 0
 
@@ -330,6 +338,20 @@ class Datastore(Helper):
 			data =  self.get_post_data(up[1],get_ups)
 			final.append(data)
 		return final
+
+	def update_user(self,userid,visible):
+		'''Update the user setting for being visible or not'''
+		query = queries.getUpdateUser()
+		userid = self.is_existing_userid(userid)
+		visible = self.checkBoolean(visible)
+
+		if userid == -1:
+			return -1
+		if visible == -1:
+			return -2
+		self.cursor.execute(query, {'userid':userid, 'visible':visible} )
+		self.db.commit()
+		return 0
 
 	def check_credentials(self,userid,password):
 		'''Returns True/False if the userid and password match'''

@@ -5,7 +5,8 @@ create_users = '''
 									USERID TEXT PRIMARY KEY NOT NULL,
 								 	NAME TEXT NOT NULL,
 								 	SEX TEXT NOT NULL,
-								 	PASSWORD TEXT NOT NULL
+								 	PASSWORD TEXT NOT NULL,
+								 	VISIBLE TEXT NOT NULL
 								 );'''
 
 create_posts = '''
@@ -39,8 +40,8 @@ create_ups = '''
 ########################################INSERT QUERIES########################################
 
 insert_user = '''INSERT INTO USERS
-									(USERID, NAME, SEX, PASSWORD) \
-									VALUES (:userid, :name, :sex, :password) '''
+									(USERID, NAME, SEX, PASSWORD, VISIBLE) \
+									VALUES (:userid, :name, :sex, :password, :visible) '''
 
 insert_post = '''INSERT INTO POSTS
 									(TIMESTAMP, USERID, CONTENT) \
@@ -60,7 +61,7 @@ insert_up = '''INSERT INTO UPS
 
 ########################################QUERIES########################################
 
-all_users = '''SELECT USERID, NAME, SEX 
+all_users = '''SELECT USERID, NAME, SEX, VISIBLE 
 								FROM USERS'''
 
 all_posts = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
@@ -111,6 +112,12 @@ find_user = '''SELECT USERID, NAME, SEX, PASSWORD
 find_post = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 								FROM POSTS
 								WHERE POSTID = :postid'''
+
+########################################UPDATE QUERIES########################################
+
+update_user = '''UPDATE USERS
+									SET VISIBLE = :visible
+									WHERE USERID = :userid'''
 
 #Function to fetch create table queries
 def getCreateTable():
@@ -168,3 +175,6 @@ def getFindUser():
 
 def getFindPost():
 	return find_post
+
+def getUpdateUser():
+	return update_user

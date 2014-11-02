@@ -10,7 +10,7 @@ database.insert_new_user('geralt','priyansh','m','pass')
 database.insert_new_user('aura','tanya','f','pass')
 database.insert_new_user('ian','hor','m','root')
 database.insert_new_user('mom','vinita','f','mod')
-database.insert_new_user('dad','ajay','m','admin')
+database.insert_new_user('dad','ajay','m','admin','False')
 
 database.insert_new_post('geralt','Hey you')
 database.insert_new_post('geralt','Out there on your own')
