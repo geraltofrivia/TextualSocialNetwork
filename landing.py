@@ -148,6 +148,7 @@ class Welcome(threading.Thread):
 		description.append(('up','\t\tTo support/like a post.\n'))
 		description.append(('users','\t\tTo view a list of all the users in the database\n'))
 		description.append(('view','\t\tTo view a users profile page.\n'))
+		description.append(('settings','\tTo change settings of your profile'))
 		description.append(('logout','\t\tTo log yourself out of the system\n'))
 		description.append(('exit','\t\tTo exit out of the application.\n'))
 
@@ -519,6 +520,35 @@ class Welcome(threading.Thread):
 	def settings(self):
 		'''In this function we will show user his preferences and 
 		allow him to edit them as per required'''
+		welcome_instruction = 'You can change the following settings for your profile. Please enter the command corresponding to any option \n'
+		error_instruction = 'Command unrecognized. Please enter a valid command'
+		error_visible = 'Please enter either "true" or "false"'
+		visible_instruction = 'Enter "true" if you want your profile to be open to be seen by anyone on Ping. \nEnter "false" to hide yourself from global list of users and details of your profile to be viewed from anyone else except for your subscribers'
+		options = []
+		options.append('Visibility-\tvisible')
+		options.append('Change Passoword-\tchange password')
+		options.append('Remove my posts-\tremove posts')
+		options.append('Remove my subscriptions-\tremove subscriptions')
+
+		instruction = welcome_instruction
+		for option in options:
+			instruction += '\t' + option + '\n'
+
+		status = -1
+		while status <0:
+			command = self.send(instruction,'main/settings',100)
+			
+			if command == 'exit':
+				return self.exit()
+			if command == 'cancel'or command == 'back':
+				return False
+
+			if command == 'visible':
+				command_ = self.send(visible_instruction,'main/settings/visible',100)
+				status = self.database.update_user_visible(self.userid,command_)
+				if status == -2:
+					self.send(error_visible,buffer = True)
+
 		
 
 	def exit(self):
