@@ -127,4 +127,7 @@ print database.check_credentials('geralt','pas')
 print "CHECK GET UPS OF GERALT"
 ups = database.get_ups_of('geralt',True)
 print ups
+print '\n\n\n\n\n\n'
+print "CHECK FIND USERS IN POST"
+print database.find_users_in_post("Test post. @geralt is on fire!. @2PM is cool when @aura comes along as well. To ensure that the script works, let us just also try @ mom")
 database.exit()

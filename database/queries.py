@@ -17,6 +17,12 @@ create_posts = '''
 									CONTENT TEXT NOT NULL
 									);'''
 
+create_mentions = '''
+								CREATE TABLE MENTIONS (
+									POSTID INTEGER NOT NULL,
+									USERID TEXT NOT NULL
+									);'''
+
 create_subscriptions = '''
 								CREATE TABLE SUBSCRIPTIONS (
 									USERID TEXT NOT NULL,
@@ -58,6 +64,10 @@ insert_ping = '''INSERT INTO PINGS
 insert_up = '''INSERT INTO UPS
 									(POSTID, USERID,TIMESTAMP) \
 									VALUES (:postid,:userid,:timestamp) '''
+
+insert_mention = '''INSERT INTO MENTIONS
+											(POSTID, USERID) \
+											VALUES (:postid,:userid) '''									
 
 ########################################QUERIES########################################
 
@@ -103,7 +113,18 @@ all_ups_to_post = '''SELECT USERID
 all_ups_of_user = '''SELECT USERID, POSTID
 											FROM UPS
 											WHERE USERID = :userid
-											ORDER BY TIMESTAMP DESC'''															
+											ORDER BY TIMESTAMP DESC'''
+
+all_mentions = '''SELECT USERID, POSTID
+										FROM MENTIONS'''
+
+all_mentions_of_user = '''SELECT USERID, POSTID
+													FROM MENTIONS
+													WHERE USERID = :userid'''
+
+all_mentions_in_post = '''SELECT USERID, POSTID
+													FROM MENTIONS
+													WHERE POSTID = :postid'''
 
 find_user = '''SELECT USERID, NAME, SEX, PASSWORD
 								FROM USERS
@@ -121,7 +142,7 @@ update_user = '''UPDATE USERS
 
 #Function to fetch create table queries
 def getCreateTable():
-	return [create_users,create_ups,create_pings,create_subscriptions,create_posts]
+	return [create_users,create_ups,create_pings,create_subscriptions,create_posts,create_mentions]
 
 #Functions to fetch insert element queries
 def getInsertUser():
@@ -138,6 +159,9 @@ def getInsertPing():
 
 def getInsertUp():
 	return insert_up
+
+def getInsertMention():
+	return insert_mention
 
 #Functions to fetch query request queries :/ 
 def getAllUsers():
@@ -178,3 +202,12 @@ def getFindPost():
 
 def getUpdateUser():
 	return update_user
+
+def getAllMentions():
+	return all_mentions
+
+def getMentionsInPost():
+	return all_mentions_in_post
+
+def getMentionsOfUser():
+	return all_mentions_of_user

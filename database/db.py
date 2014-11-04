@@ -128,7 +128,7 @@ class Datastore(Helper):
 		self.db.commit()
 		return 0
 
-	def insert_new_post(self,userid,content):
+	def insert_new_post(self,userid,content,find_mentions = True):
 		query = queries.getInsertPost()
 		userid = self.is_existing_userid(userid)
 		content = self.is_not_empty(content)
@@ -141,6 +141,8 @@ class Datastore(Helper):
 		timestamp = self.getNow()
 		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'content':content} )
 		self.db.commit()
+		if find_mentions:
+			self.find_users_in_post( self.get_post_data( self.cursor.lastrowid ) )
 		return 0
 
 	def insert_new_subscription(self,userid,subsid):
@@ -171,6 +173,20 @@ class Datastore(Helper):
 		self.cursor.execute(query, {'fromid':fromid,'toid':toid,'timestamp':timestamp} )
 		self.db.commit()
 		return 0
+
+	def insert_new_mention(self,userid,postid):
+		query = queries.getInsertMention()
+		userid = self.is_existing_userid(userid)
+		postid = self.is_existing_postid(postid)
+		if userid == -1:
+			print "(Database: Insert Mention):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid
+			return -1
+		if postid == -1:
+			print "(Database: Insert Mention):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid
+			return -2
+		self.cursor.execute(query, {'userid':userid,'postid':postid} )
+		self.db.commit()
+		return 0		
 
 	def insert_new_up(self,postid,userid):
 		query = queries.getInsertUp()
@@ -292,6 +308,15 @@ class Datastore(Helper):
 			result.append(subscription)
 		return result
 
+	def get_all_mentions(self):
+		'''Returns a python list of all the mentions stored in the database'''
+		query = queries.getAllMentions()
+		self.cursor.execute(query)
+		result = []
+		for mention in self.cursor:
+			result.append(mention)
+		return result
+
 	def get_pings_by(self,userid):
 		'''Returns a list of userids of people whom this user has pinged'''
 		query = queries.getPingsByUser()
@@ -365,6 +390,26 @@ class Datastore(Helper):
 		if len(result) <= 0:
 			return False	
 		return result[0][3] == password
+
+	def find_users_in_post(self,post):
+		'''This function returns a list of all the users that are in a post. Returns an empty list otherwise
+		It looks for an '@' in the string, When found, it will detect usernames like @geralt but not geralt or @ geralt.'''
+		users =  self.get_all_users()
+		index = 0
+		users_found = []
+		content = post[1]
+		postid = post[0]
+		while True:
+			index = content.find('@',index)
+			if index == -1:
+				break
+			word = content[index:].split()[0]
+			for user in users:
+				if word.startswith('@'+user[0]):
+					users_found.append(user[0])
+					self.insert_new_mention(user[0],postid)
+			index += 2
+		return users_found
 
 	def exit(self):
 		self.db.close()

@@ -180,8 +180,8 @@ class Welcome(threading.Thread):
 			if skip_subscribed == True:
 				if user[0] in subscribed:
 					continue
-			if not user[-1].lower() == 'true':
-				continue
+			#if not user[-1].lower() == 'true':
+			#	continue
 			if not user[0] == self.userid:
 				message = message + user[0] + '\t\t' + user[1] + '\n'
 		self.send(message,buffer = True)
