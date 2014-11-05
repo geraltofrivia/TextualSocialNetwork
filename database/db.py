@@ -281,12 +281,20 @@ class Datastore(Helper):
 	def get_posts_for(self,userid,get_ups=False):
 		'''Returns a list of tuple (postid, text, userid, timestamp)
 		collected from the users which are subscribed by this user. This can directly be fed in a timeline
-		If parameter is true, returns number of ups per post as well'''
+		If parameter is true, returns number of ups per post as well
+
+		v0.7 onwards - fetches post which have mention for the given user id.'''
 		subs = self.get_subscriptions_of(userid)
 		result = []
 		for user in subs:
 			posts = self.get_posts_of(user,get_ups)
 			result = result + posts
+		#Fetch mentions too
+		mentions = self.get_mentions_of(userid)
+		for mention in mentions:
+			post_data = self.get_post_data(mention,get_ups)
+			if not post_data in result:
+				result.append(post_data)
 		return sorted(result, key=lambda x : x[3], reverse = True)
 
 	def get_subscriptions_of(self,userid):
@@ -315,6 +323,15 @@ class Datastore(Helper):
 		result = []
 		for mention in self.cursor:
 			result.append(mention)
+		return result
+
+	def get_mentions_of(self,userid):
+		'''Returns postid for all the posts which mention the given user somewhere'''
+		query = queries.getMentionsOfUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for mention in self.cursor:
+			result.append(mention[1])
 		return result
 
 	def get_pings_by(self,userid):

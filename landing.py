@@ -148,7 +148,7 @@ class Welcome(threading.Thread):
 		description.append(('up','\t\tTo support/like a post.\n'))
 		description.append(('users','\t\tTo view a list of all the users in the database\n'))
 		description.append(('view','\t\tTo view a users profile page.\n'))
-		description.append(('settings','\tTo change settings of your profile'))
+		description.append(('settings','\tTo change settings of your profile\n'))
 		description.append(('logout','\t\tTo log yourself out of the system\n'))
 		description.append(('exit','\t\tTo exit out of the application.\n'))
 
@@ -273,6 +273,7 @@ class Welcome(threading.Thread):
 		empty_subscriptions = 'The user has not subscribed to anyone yet'
 		empty_pings_from = 'The user has not been pinged by anyone yet'
 		empty_pings_to = 'The user has not pinged anyone yet'
+		empty_mentions = "The user has not  been mentioned in anyone's posts yet"
 
 		if view_self:
 			userid = self.userid
@@ -321,7 +322,7 @@ class Welcome(threading.Thread):
 			message = message + empty_ups + '\n\n'
 		counter = 0
 		for post in ups:
-			message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+			message = message + '   ' + post[2] + ': ' + post[1] + '\n'
 			counter = counter + 1
 			if counter >= 2:
 				break		
