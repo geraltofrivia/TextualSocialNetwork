@@ -2,6 +2,7 @@ from socket import *
 import socket
 import string
 import sys
+import time
 
 s = socket.socket()
 port = 9000
@@ -38,8 +39,7 @@ while True:
 	except socket.error as error:
 		if error.errno == 111 or error.errno == 107:
 			print "(Error): The client is unable to connect to the server. Please ensure that the server is online and you have specified the correct address and port"
-			print "(Ping): Enter the correct IP and Port number of the server seperated by a space. Enter exit instead to terminate this application"
-			command = raw_input().lower().strip()
+			command = raw_input("(Ping): Enter the correct IP and Port number of the server seperated by a space. Enter exit instead to terminate this application: ").lower().strip()
 			
 			if command == "exit":
 				exit()
@@ -57,13 +57,13 @@ while True:
 		break
 
 
+
 #Just have one send one receive interface
-print "Entering Interface"
 while continue_flag:
 	message =  s.recv(1024)
-	message_ = str(message.split('#$%')[0])
-	prompt_ = str(message.split('#$%')[1])
-	print message_
+	message_ = str(message.split('#$!')[0])
+	prompt_ = str(message.split('#$!')[1])
+	
 	
 	#Routine for client exit
 	if 'main/bye-bye' in prompt_:
@@ -74,14 +74,20 @@ while continue_flag:
 	#Routine for long message detection
 	if prompt_.lower().strip() == 'incoming':
 		print "Long message incoming. Please wait while we proceed to fetch it all for you"
-		n = int(message_)
-		message_ = ''
+		n = int(message_.strip())
+		messages = []
 		s.send("Ready!")
 		for i in range(n):
-			message_ += s.recv(1024)
-			print "Receving part %d" % i
+			messages.append(s.recv(1024))
+			print "Receiving Block" ,i
+			time.sleep(1)
 			s.send("OK")
-	
+		#assuming that the trailing part of last message has some prompt, we extract it.
+		message_ = ''.join( s for s in messages)
+		prompt_ = str(message_.split('#$!')[-1])
+
+
+	print message_
 	while True:
 		command = raw_input(prompt_)
 		if len(command) > 1:

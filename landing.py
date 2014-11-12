@@ -45,21 +45,24 @@ class Welcome(threading.Thread):
 			self.buffer = ''
 
 		#Sending it all.
-		message = message + '#$%' + prompt
+		message = message + '#$!' + prompt
 		#If message size is larger than 1024, then send it in parts.
 		if len(message) > 1023:
 			print self.addr,": Sending long message"
-			n = message/1024
-			r = message%1024
+			print message
+			n = len(message)/1024
+			r = len(message)%1024
 			if r > 0:
-				self.client.send("%d#$%incoming" % n+1)
-				self.client.send("%d#$%incoming" % n)
+				self.client.send("%s #$! incoming" % str(n+1))
+			else:
+				self.client.send("%s #$! incoming" % str(n))
+			print self.addr, ':', self.client.recv(1024)
+			for i in range(n):
+				self.client.send(message[i*1024:((i+1)*1024)-1])
 				self.client.recv(1024)
-				for i in range(n):
-					self.client.send(message[i*1024:((i+1)*1024)-1])
-					self.client.recv(1024)
-				if r > 0:
-					self.client.send(message[n*1024:])
+			if r > 0:
+				self.client.send(message[n*1024:])
+				print self.client.recv(1024)
 		else:
 			self.client.send(message)
 		if self.discontinue:
