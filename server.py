@@ -40,5 +40,5 @@ while True:
 	client, addr  = connection.accept()
 	print addr, "Connected"
 	#Now we want to thread to a new branch and continue handling the client there
-	server = landing.Welcome(client,addr)
-	server.start()
+	thread = landing.Welcome(client,addr)
+	thread.start()

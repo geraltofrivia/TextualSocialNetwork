@@ -18,7 +18,6 @@ class Welcome(threading.Thread):
 		self.logged_in = False
 
 		self.discontinue = False
-		
 		self.buffer = ''
 
 	def send(self,message,prompt = 'main',length = 1024,buffer = False):
@@ -30,20 +29,41 @@ class Welcome(threading.Thread):
 							We want to store it somewhere and send it off with the next send.
 							The situation will arise when the server will have something to say but nothing to receive
 							The reason for this is the (send,recv) UX we setup'''
-
+    #Handling the buffer requests
 		if buffer:
 			self.buffer = self.buffer + '\n' + message
 			return
+        
+        #Handling the prompt
 		if self.logged_in:
 			prompt = self.userid + '@' + prompt
 		prompt = prompt + ':$ '
-		if len(self.buffer) > 0:
+
+		#Integrating the buffer with the current message
+		if len(self.buffer) > 0 :
 			message = self.buffer + '\n' + message
 			self.buffer = ''
+
+		#Sending it all.
 		message = message + '#$%' + prompt
-		self.client.send(message)
+		#If message size is larger than 1024, then send it in parts.
+		if len(message) > 1023:
+			print self.addr,": Sending long message"
+			n = message/1024
+			r = message%1024
+			if r > 0:
+				self.client.send("%d#$%incoming" % n+1)
+				self.client.send("%d#$%incoming" % n)
+				self.client.recv(1024)
+				for i in range(n):
+					self.client.send(message[i*1024:((i+1)*1024)-1])
+					self.client.recv(1024)
+				if r > 0:
+					self.client.send(message[n*1024:])
+		else:
+			self.client.send(message)
 		if self.discontinue:
-			return 
+			return
 		return self.client.recv(length).lower().strip()
 		
 	def get_instruction(self,first_attempt = True,independent = True):
