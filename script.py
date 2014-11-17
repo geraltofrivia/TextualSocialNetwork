@@ -10,12 +10,15 @@ database.insert_new_user('geralt','priyansh','m','pass')
 database.insert_new_user('aura','tanya','f','pass')
 database.insert_new_user('ian','hor','m','root')
 database.insert_new_user('mom','vinita','f','mod')
-database.insert_new_user('dad','ajay','m','admin')
+database.insert_new_user('dad','ajay','m','admin','False')
 
 database.insert_new_post('geralt','Hey you')
 database.insert_new_post('geralt','Out there on your own')
 database.insert_new_post('geralt','Standing naked by the phone')
 database.insert_new_post('geralt','Can you touch me?')
+database.insert_new_post('geralt','@aura, how you doin')
+database.insert_new_post('geralt','@aura, Im no millionaire')
+database.insert_new_post('geralt','@aura, but im not the type to care')
 database.insert_new_post('ian','Hey Jude')
 database.insert_new_post('ian','Dont make it bad')
 database.insert_new_post('ian','Take a sad song')
@@ -43,6 +46,7 @@ database.insert_new_subscription('geralt','mom')
 database.insert_new_subscription('dad','mom')
 database.insert_new_subscription('dad','ian')
 database.insert_new_subscription('ian','geralt')
+database.insert_new_subscription('aura','ian')
 
 database.insert_new_ping('geralt','ian')
 database.insert_new_ping('dad','mom')
@@ -124,7 +128,12 @@ print database.is_existing_userid('geralt')
 print "CHECK PASSWORD"
 print database.check_credentials('geralt','pass')
 print database.check_credentials('geralt','pas')
-print "CHECK GET UPS OF GERALT"
+print "GET UPS OF GERALT"
 ups = database.get_ups_of('geralt',True)
 print ups
+print '\n\n\n\n\n\n'
+print "FIND USERS IN POST"
+print database.find_users_in_post("Test post. @geralt is on fire!. @2PM is cool when @aura comes along as well. To ensure that the script works, let us just also try @ mom")
+print database.get_posts_for('aura')
 database.exit()
+

@@ -18,7 +18,6 @@ class Welcome(threading.Thread):
 		self.logged_in = False
 
 		self.discontinue = False
-		
 		self.buffer = ''
 
 	def send(self,message,prompt = 'main',length = 1024,buffer = False):
@@ -30,20 +29,44 @@ class Welcome(threading.Thread):
 							We want to store it somewhere and send it off with the next send.
 							The situation will arise when the server will have something to say but nothing to receive
 							The reason for this is the (send,recv) UX we setup'''
-
+    #Handling the buffer requests
 		if buffer:
 			self.buffer = self.buffer + '\n' + message
 			return
+        
+        #Handling the prompt
 		if self.logged_in:
 			prompt = self.userid + '@' + prompt
 		prompt = prompt + ':$ '
-		if len(self.buffer) > 0:
+
+		#Integrating the buffer with the current message
+		if len(self.buffer) > 0 :
 			message = self.buffer + '\n' + message
 			self.buffer = ''
-		message = message + '#$%' + prompt
-		self.client.send(message)
+
+		#Sending it all.
+		message = message + '#$!' + prompt
+		#If message size is larger than 1024, then send it in parts.
+		if len(message) > 1023:
+			print self.addr,": Sending long message"
+			print message
+			n = len(message)/1024
+			r = len(message)%1024
+			if r > 0:
+				self.client.send("%s #$! incoming" % str(n+1))
+			else:
+				self.client.send("%s #$! incoming" % str(n))
+			print self.addr, ':', self.client.recv(1024)
+			for i in range(n):
+				self.client.send(message[i*1024:((i+1)*1024)-1])
+				self.client.recv(1024)
+			if r > 0:
+				self.client.send(message[n*1024:])
+				print self.client.recv(1024)
+		else:
+			self.client.send(message)
 		if self.discontinue:
-			return 
+			return
 		return self.client.recv(length).lower().strip()
 		
 	def get_instruction(self,first_attempt = True,independent = True):
@@ -148,6 +171,7 @@ class Welcome(threading.Thread):
 		description.append(('up','\t\tTo support/like a post.\n'))
 		description.append(('users','\t\tTo view a list of all the users in the database\n'))
 		description.append(('view','\t\tTo view a users profile page.\n'))
+		description.append(('settings','\tTo change settings of your profile\n'))
 		description.append(('logout','\t\tTo log yourself out of the system\n'))
 		description.append(('exit','\t\tTo exit out of the application.\n'))
 
@@ -179,6 +203,8 @@ class Welcome(threading.Thread):
 			if skip_subscribed == True:
 				if user[0] in subscribed:
 					continue
+			#if not user[-1].lower() == 'true':
+			#	continue
 			if not user[0] == self.userid:
 				message = message + user[0] + '\t\t' + user[1] + '\n'
 		self.send(message,buffer = True)
@@ -270,6 +296,7 @@ class Welcome(threading.Thread):
 		empty_subscriptions = 'The user has not subscribed to anyone yet'
 		empty_pings_from = 'The user has not been pinged by anyone yet'
 		empty_pings_to = 'The user has not pinged anyone yet'
+		empty_mentions = "The user has not  been mentioned in anyone's posts yet"
 
 		if view_self:
 			userid = self.userid
@@ -318,7 +345,7 @@ class Welcome(threading.Thread):
 			message = message + empty_ups + '\n\n'
 		counter = 0
 		for post in ups:
-			message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+			message = message + '   ' + post[2] + ': ' + post[1] + '\n'
 			counter = counter + 1
 			if counter >= 2:
 				break		
@@ -514,6 +541,39 @@ class Welcome(threading.Thread):
 			if status == -1:
 				self.send(error_instruction,buffer=True)
 
+	def settings(self):
+		'''In this function we will show user his preferences and 
+		allow him to edit them as per required'''
+		welcome_instruction = 'You can change the following settings for your profile. Please enter the command corresponding to any option \n'
+		error_instruction = 'Command unrecognized. Please enter a valid command'
+		error_visible = 'Please enter either "true" or "false"'
+		visible_instruction = 'Enter "true" if you want your profile to be open to be seen by anyone on Ping. \nEnter "false" to hide yourself from global list of users and details of your profile to be viewed from anyone else except for your subscribers'
+		options = []
+		options.append('Visibility-\tvisible')
+		options.append('Change Passoword-\tchange password')
+		options.append('Remove my posts-\tremove posts')
+		options.append('Remove my subscriptions-\tremove subscriptions')
+
+		instruction = welcome_instruction
+		for option in options:
+			instruction += '\t' + option + '\n'
+
+		status = -1
+		while status <0:
+			command = self.send(instruction,'main/settings',100)
+			
+			if command == 'exit':
+				return self.exit()
+			if command == 'cancel'or command == 'back':
+				return False
+
+			if command == 'visible':
+				command_ = self.send(visible_instruction,'main/settings/visible',100)
+				status = self.database.update_user_visible(self.userid,command_)
+				if status == -2:
+					self.send(error_visible,buffer = True)
+
+		
 
 	def exit(self):
 		'''This function is used to finally end the client connection'''
@@ -575,6 +635,8 @@ class Welcome(threading.Thread):
 				self.view(view_self = True)
 			if command == 'view':
 				self.view()
+			if command == 'settings':
+				self.settings()
 			if command == 'logout':
 				self.logout()
 			if command == 'exit':

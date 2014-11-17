@@ -33,6 +33,14 @@ class Helper:
 		else:
 			return -1
 
+	def checkBoolean(self,var):
+		if var.lower()[0] == 't':
+			return 'True'
+		if var.lower()[0] == 'f':
+			return 'False'
+		else:
+			return -1
+
 	def getNow(self):
 		return str(datetime.datetime.now())
 
@@ -97,7 +105,7 @@ class Datastore(Helper):
 			return -1
 		return var
 
-	def insert_new_user(self,userid,name,sex,password):
+	def insert_new_user(self,userid,name,sex,password,visible = 'true'):
 		query = queries.getInsertUser()
 		userid = self.is_existing_userid(userid, reverse = True)
 		name = self.checkText(name)
@@ -116,11 +124,11 @@ class Datastore(Helper):
 		if password == -1:
 			print "(Database: Insert User):Improper Datatype, value rejected. userid:",userid,'\tname:',name,'\tsex:',sex
 			return -4
-		self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password} )
+		self.cursor.execute( query, {'userid':userid,'name':name,'sex':sex,'password':password,'visible':visible} )
 		self.db.commit()
 		return 0
 
-	def insert_new_post(self,userid,content):
+	def insert_new_post(self,userid,content,find_mentions = True):
 		query = queries.getInsertPost()
 		userid = self.is_existing_userid(userid)
 		content = self.is_not_empty(content)
@@ -133,6 +141,8 @@ class Datastore(Helper):
 		timestamp = self.getNow()
 		self.cursor.execute(query, {'timestamp':timestamp,'userid':userid,'content':content} )
 		self.db.commit()
+		if find_mentions:
+			self.find_users_in_post( self.get_post_data( self.cursor.lastrowid ) )
 		return 0
 
 	def insert_new_subscription(self,userid,subsid):
@@ -164,6 +174,20 @@ class Datastore(Helper):
 		self.db.commit()
 		return 0
 
+	def insert_new_mention(self,userid,postid):
+		query = queries.getInsertMention()
+		userid = self.is_existing_userid(userid)
+		postid = self.is_existing_postid(postid)
+		if userid == -1:
+			print "(Database: Insert Mention):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid
+			return -1
+		if postid == -1:
+			print "(Database: Insert Mention):Improper Datatype, value rejected. userid:",userid,'\tpostid:',postid
+			return -2
+		self.cursor.execute(query, {'userid':userid,'postid':postid} )
+		self.db.commit()
+		return 0		
+
 	def insert_new_up(self,postid,userid):
 		query = queries.getInsertUp()
 		postid = self.is_existing_postid(postid)
@@ -185,7 +209,9 @@ class Datastore(Helper):
 		self.cursor.execute(query)
 		result = []
 		for user in self.cursor:
-			result.append(user)			
+			if not user[-1].lower() == 'true':
+				continue			
+			result.append(user)
 		return result
 
 	def get_user_data(self,userid):
@@ -255,12 +281,20 @@ class Datastore(Helper):
 	def get_posts_for(self,userid,get_ups=False):
 		'''Returns a list of tuple (postid, text, userid, timestamp)
 		collected from the users which are subscribed by this user. This can directly be fed in a timeline
-		If parameter is true, returns number of ups per post as well'''
+		If parameter is true, returns number of ups per post as well
+
+		v0.7 onwards - fetches post which have mention for the given user id.'''
 		subs = self.get_subscriptions_of(userid)
 		result = []
 		for user in subs:
 			posts = self.get_posts_of(user,get_ups)
 			result = result + posts
+		#Fetch mentions too
+		mentions = self.get_mentions_of(userid)
+		for mention in mentions:
+			post_data = self.get_post_data(mention,get_ups)
+			if not post_data in result:
+				result.append(post_data)
 		return sorted(result, key=lambda x : x[3], reverse = True)
 
 	def get_subscriptions_of(self,userid):
@@ -280,6 +314,24 @@ class Datastore(Helper):
 		result = []
 		for subscription in self.cursor:
 			result.append(subscription)
+		return result
+
+	def get_all_mentions(self):
+		'''Returns a python list of all the mentions stored in the database'''
+		query = queries.getAllMentions()
+		self.cursor.execute(query)
+		result = []
+		for mention in self.cursor:
+			result.append(mention)
+		return result
+
+	def get_mentions_of(self,userid):
+		'''Returns postid for all the posts which mention the given user somewhere'''
+		query = queries.getMentionsOfUser()
+		self.cursor.execute(query, {'userid':userid} )
+		result = []
+		for mention in self.cursor:
+			result.append(mention[1])
 		return result
 
 	def get_pings_by(self,userid):
@@ -331,6 +383,20 @@ class Datastore(Helper):
 			final.append(data)
 		return final
 
+	def update_user_visible(self,userid,visible):
+		'''Update the user setting for being visible or not'''
+		query = queries.getUpdateUser()
+		userid = self.is_existing_userid(userid)
+		visible = self.checkBoolean(visible)
+
+		if userid == -1:
+			return -1
+		if visible == -1:
+			return -2
+		self.cursor.execute(query, {'userid':userid, 'visible':visible} )
+		self.db.commit()
+		return 0
+
 	def check_credentials(self,userid,password):
 		'''Returns True/False if the userid and password match'''
 		query = queries.getFindUser()
@@ -341,6 +407,26 @@ class Datastore(Helper):
 		if len(result) <= 0:
 			return False	
 		return result[0][3] == password
+
+	def find_users_in_post(self,post):
+		'''This function returns a list of all the users that are in a post. Returns an empty list otherwise
+		It looks for an '@' in the string, When found, it will detect usernames like @geralt but not geralt or @ geralt.'''
+		users =  self.get_all_users()
+		index = 0
+		users_found = []
+		content = post[1]
+		postid = post[0]
+		while True:
+			index = content.find('@',index)
+			if index == -1:
+				break
+			word = content[index:].split()[0]
+			for user in users:
+				if word.startswith('@'+user[0]):
+					users_found.append(user[0])
+					self.insert_new_mention(user[0],postid)
+			index += 2
+		return users_found
 
 	def exit(self):
 		self.db.close()

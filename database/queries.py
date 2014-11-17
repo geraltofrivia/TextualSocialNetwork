@@ -5,7 +5,8 @@ create_users = '''
 									USERID TEXT PRIMARY KEY NOT NULL,
 								 	NAME TEXT NOT NULL,
 								 	SEX TEXT NOT NULL,
-								 	PASSWORD TEXT NOT NULL
+								 	PASSWORD TEXT NOT NULL,
+								 	VISIBLE TEXT NOT NULL
 								 );'''
 
 create_posts = '''
@@ -14,6 +15,12 @@ create_posts = '''
 									USERID TEXT NOT NULL,
 									POSTID INTEGER PRIMARY KEY AUTOINCREMENT,
 									CONTENT TEXT NOT NULL
+									);'''
+
+create_mentions = '''
+								CREATE TABLE MENTIONS (
+									POSTID INTEGER NOT NULL,
+									USERID TEXT NOT NULL
 									);'''
 
 create_subscriptions = '''
@@ -39,8 +46,8 @@ create_ups = '''
 ########################################INSERT QUERIES########################################
 
 insert_user = '''INSERT INTO USERS
-									(USERID, NAME, SEX, PASSWORD) \
-									VALUES (:userid, :name, :sex, :password) '''
+									(USERID, NAME, SEX, PASSWORD, VISIBLE) \
+									VALUES (:userid, :name, :sex, :password, :visible) '''
 
 insert_post = '''INSERT INTO POSTS
 									(TIMESTAMP, USERID, CONTENT) \
@@ -58,9 +65,13 @@ insert_up = '''INSERT INTO UPS
 									(POSTID, USERID,TIMESTAMP) \
 									VALUES (:postid,:userid,:timestamp) '''
 
+insert_mention = '''INSERT INTO MENTIONS
+											(POSTID, USERID) \
+											VALUES (:postid,:userid) '''									
+
 ########################################QUERIES########################################
 
-all_users = '''SELECT USERID, NAME, SEX 
+all_users = '''SELECT USERID, NAME, SEX, VISIBLE 
 								FROM USERS'''
 
 all_posts = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
@@ -102,7 +113,18 @@ all_ups_to_post = '''SELECT USERID
 all_ups_of_user = '''SELECT USERID, POSTID
 											FROM UPS
 											WHERE USERID = :userid
-											ORDER BY TIMESTAMP DESC'''															
+											ORDER BY TIMESTAMP DESC'''
+
+all_mentions = '''SELECT USERID, POSTID
+										FROM MENTIONS'''
+
+all_mentions_of_user = '''SELECT USERID, POSTID
+													FROM MENTIONS
+													WHERE USERID = :userid'''
+
+all_mentions_in_post = '''SELECT USERID, POSTID
+													FROM MENTIONS
+													WHERE POSTID = :postid'''
 
 find_user = '''SELECT USERID, NAME, SEX, PASSWORD
 								FROM USERS
@@ -112,9 +134,15 @@ find_post = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 								FROM POSTS
 								WHERE POSTID = :postid'''
 
+########################################UPDATE QUERIES########################################
+
+update_user = '''UPDATE USERS
+									SET VISIBLE = :visible
+									WHERE USERID = :userid'''
+
 #Function to fetch create table queries
 def getCreateTable():
-	return [create_users,create_ups,create_pings,create_subscriptions,create_posts]
+	return [create_users,create_ups,create_pings,create_subscriptions,create_posts,create_mentions]
 
 #Functions to fetch insert element queries
 def getInsertUser():
@@ -131,6 +159,9 @@ def getInsertPing():
 
 def getInsertUp():
 	return insert_up
+
+def getInsertMention():
+	return insert_mention
 
 #Functions to fetch query request queries :/ 
 def getAllUsers():
@@ -168,3 +199,15 @@ def getFindUser():
 
 def getFindPost():
 	return find_post
+
+def getUpdateUser():
+	return update_user
+
+def getAllMentions():
+	return all_mentions
+
+def getMentionsInPost():
+	return all_mentions_in_post
+
+def getMentionsOfUser():
+	return all_mentions_of_user
