@@ -3,7 +3,7 @@ import socket
 import string
 import sys
 import time
-from termcolor import colored, cprint
+from termcolor.termcolor import colored, cprint
 
 s = socket.socket()
 port = 9000

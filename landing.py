@@ -3,7 +3,7 @@ import threading
 import os
 import time
 from database.db import Datastore
-from termcolor import colored
+from termcolor.termcolor import colored
 
 class Welcome(threading.Thread):
 	def __init__(self,client,addr):
