@@ -383,9 +383,20 @@ class Datastore(Helper):
 			final.append(data)
 		return final
 
+	def update_user_password(self,userid,password):
+		'''Update the user setting for being visible or not'''
+		query = queries.getUpdateUserPassword()
+		userid = self.is_existing_userid(userid)
+
+		if userid == -1:
+			return -1
+		self.cursor.execute(query, {'userid':userid, 'password':password} )
+		self.db.commit()
+		return 0
+
 	def update_user_visible(self,userid,visible):
 		'''Update the user setting for being visible or not'''
-		query = queries.getUpdateUser()
+		query = queries.getUpdateUserVisibility()
 		userid = self.is_existing_userid(userid)
 		visible = self.checkBoolean(visible)
 
@@ -426,7 +437,23 @@ class Datastore(Helper):
 					users_found.append(user[0])
 					self.insert_new_mention(user[0],postid)
 			index += 2
+		#self.update_post(users_found,postid)
 		return users_found
 
 	def exit(self):
 		self.db.close()
+
+	def delete_subscription(self, userid, subsid):
+		'''This function is called to delete the particular subscriber for a particular user'''
+		query = queries.deleteSubscription()
+		userid = self.is_existing_userid(userid)
+		subsid = self.is_existing_userid(subsid)
+
+		if userid == -1:
+			return -1
+		if subsid == -2:
+			return -2
+
+		self.cursor.execute(query, {'userid':userid, 'subsid':subsid} )
+		self.db.commit()
+		return 0

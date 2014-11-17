@@ -61,7 +61,6 @@ while True:
 
 #Just have one send one receive interface
 while continue_flag:
-	#print chr(27) + "[2J"
 	
 	message =  s.recv(1024)
 	message_ = str(message.split('#$!')[0])
@@ -95,6 +94,9 @@ while continue_flag:
 		prompt_ = prompt_[:-4] + prompt_[-3:]
 		sys.stderr.write("\x1b[2J\x1b[H")
 	print message_
+	
+	#Furnish the prompt properly
+	prompt_ = colored(prompt_, 'white', attrs=['bold'])
 	while True:
 		command = raw_input(prompt_)
 		if len(command) > 1:
