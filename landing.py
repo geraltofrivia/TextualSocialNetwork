@@ -82,7 +82,16 @@ class Welcome(threading.Thread):
 		
 	def get_instruction(self,first_attempt = True,independent = True):
 		'''Receive the client socket, make a new thread and return control to the main program'''
-		welcome_instruction = '''Hello, to start using this service, you will have to either login or register yourself.\nPlease proceed by entering 'login' or 'register' to do the same.\nIf at any time you wish to discontinue using the service, please enter 'exit' '''
+		welcome_instruction = colored('''
+		  $$$$$$$\ $$$$$$\ $$\   $$\  $$$$$$\  
+		  $$  __$$\\_$$  _|$$$\  $$ |$$  __$$\ 
+		  $$ |  $$ | $$ |  $$$$\ $$ |$$ /  \__|
+		  $$$$$$$  | $$ |  $$ $$\$$ |$$ |$$$$\ 
+		  $$  ____/  $$ |  $$ \$$$$ |$$ |\_$$ |
+		  $$ |       $$ |  $$ |\$$$ |$$ |  $$ |
+		  $$ |     $$$$$$\ $$ | \$$ |\$$$$$$  |
+		  \__|     \______|\__|  \__| \______/                                                                                                               
+		  ''', attrs = ['bold'] )+'''\n\n\nHello, to start using this service, you will have to either login or register yourself.\nPlease proceed by entering 'login' or 'register' to do the same.\nIf at any time you wish to discontinue using the service, please enter 'exit' '''
 		error_instruction = colored('''You are not yet logged in. Enter either 'login' or 'register' to continue, or 'exit' to stop''' ,  'red', attrs=['bold'])
 		further_instruction = colored('''What do you want to do now?''',attrs=['blink'])
 
