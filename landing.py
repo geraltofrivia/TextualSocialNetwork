@@ -20,7 +20,7 @@ class Welcome(threading.Thread):
 		self.discontinue = False
 		self.buffer = ''
 
-	def send(self,message,prompt = 'main',length = 1024,buffer = False):
+	def send(self,message,prompt = 'main',length = 1024,buffer = False,pagebreak = False):
 		'''This function is used to implement a prompt on the client side.
 		It masks client.send.	We now follow a (send,send,receive) UX. The second send is solely for the prompt
 		prompt - The value that denotes where the client ought to be when he next types in a command
@@ -34,10 +34,13 @@ class Welcome(threading.Thread):
 			self.buffer = self.buffer + '\n' + message
 			return
         
-        #Handling the prompt
+    #Handling the prompt
 		if self.logged_in:
 			prompt = self.userid + '@' + prompt
-		prompt = prompt + ':$ '
+		if pagebreak:
+			prompt = prompt + '!:$ '
+		else:
+			prompt = prompt + ':$ '
 
 		#Integrating the buffer with the current message
 		if len(self.buffer) > 0 :
@@ -84,12 +87,12 @@ class Welcome(threading.Thread):
 
 		if not self.logged_in:
 			if first_attempt:
-				command = self.send(welcome_instruction,'main!',100)
+				command = self.send(welcome_instruction,'main',100, pagebreak=True)
 			else:
-				command = self.send(error_instruction,'main!',100)
+				command = self.send(error_instruction,'main',100)
 			return command
 		else:
-			command = self.send(further_instruction,'main!',100)
+			command = self.send(further_instruction,'main',100, pagebreak=True)
 			return command
 		
 	def login(self):
@@ -101,7 +104,7 @@ class Welcome(threading.Thread):
 		success_instruction = 'You are now logged in'
 		
 		first_attempt = True
-		userid = self.send(userid_instruction,'login!',100)
+		userid = self.send(userid_instruction,'login',100)
 		while True:
 			if not first_attempt:
 				userid = self.send(userid_instruction,'login',100)
@@ -146,7 +149,7 @@ class Welcome(threading.Thread):
 		while status < 0:
 			#self.client.send(register_instruction,len(register_instruction)+1)
 			if status <= -1: 
-				userid = self.send(userid_instruction,'register!',100)
+				userid = self.send(userid_instruction,'register',100)
 			if status <= -2:
 				usernm = self.send(usernm_instruction,'register',100)
 			if status <= -3:
@@ -583,8 +586,6 @@ class Welcome(threading.Thread):
 				if status == -2:
 					self.send(error_visible,buffer = True)
 
-		
-
 	def exit(self):
 		'''This function is used to finally end the client connection'''
 		exit_message = 'Closing the connection'
@@ -651,6 +652,8 @@ class Welcome(threading.Thread):
 				self.logout()
 			if command == 'exit':
 				self.exit()
+			if command == 'clear':
+				continue
 
 		'''This part of the code will be accessed only while closing the connection'''
 		self.client.close
