@@ -136,9 +136,17 @@ find_post = '''SELECT POSTID, CONTENT, USERID, TIMESTAMP
 
 ########################################UPDATE QUERIES########################################
 
-update_user = '''UPDATE USERS
+update_user_visibility = '''UPDATE USERS
 									SET VISIBLE = :visible
 									WHERE USERID = :userid'''
+
+update_user_password = '''UPDATE USERS
+									SET PASSWORD = :password
+									WHERE USERID = :userid'''
+
+delete_subscriptions = '''DELETE FROM SUBSCRIPTIONS
+													WHERE USERID = :userid AND SUBSID = :subsid'''
+
 
 #Function to fetch create table queries
 def getCreateTable():
@@ -200,8 +208,11 @@ def getFindUser():
 def getFindPost():
 	return find_post
 
-def getUpdateUser():
-	return update_user
+def getUpdateUserVisibility():
+	return update_user_visibility
+
+def getUpdateUserPassword():
+	return update_user_password
 
 def getAllMentions():
 	return all_mentions
@@ -211,3 +222,6 @@ def getMentionsInPost():
 
 def getMentionsOfUser():
 	return all_mentions_of_user
+
+def deleteSubscription():
+	return delete_subscriptions

@@ -3,6 +3,7 @@ import threading
 import os
 import time
 from database.db import Datastore
+from termcolor import colored
 
 class Welcome(threading.Thread):
 	def __init__(self,client,addr):
@@ -20,7 +21,7 @@ class Welcome(threading.Thread):
 		self.discontinue = False
 		self.buffer = ''
 
-	def send(self,message,prompt = 'main',length = 1024,buffer = False):
+	def send(self,message,prompt = 'main',length = 1024,buffer = False,pagebreak = False):
 		'''This function is used to implement a prompt on the client side.
 		It masks client.send.	We now follow a (send,send,receive) UX. The second send is solely for the prompt
 		prompt - The value that denotes where the client ought to be when he next types in a command
@@ -34,10 +35,13 @@ class Welcome(threading.Thread):
 			self.buffer = self.buffer + '\n' + message
 			return
         
-        #Handling the prompt
+    #Handling the prompt
 		if self.logged_in:
 			prompt = self.userid + '@' + prompt
-		prompt = prompt + ':$ '
+		if pagebreak:
+			prompt = prompt + '!:$ '
+		else:
+			prompt = prompt + ':$ '
 
 		#Integrating the buffer with the current message
 		if len(self.buffer) > 0 :
@@ -46,6 +50,12 @@ class Welcome(threading.Thread):
 
 		#Sending it all.
 		message = message + '#$!' + prompt
+
+		#See if the message asks to be potrayed as a new page. If yes then remove all leading line breaks
+		if prompt[-4] == '!':
+			while message[0] == '\n':
+				message = message[1:]
+
 		#If message size is larger than 1024, then send it in parts.
 		if len(message) > 1023:
 			print self.addr,": Sending long message"
@@ -63,6 +73,7 @@ class Welcome(threading.Thread):
 			if r > 0:
 				self.client.send(message[n*1024:])
 				print self.client.recv(1024)
+		
 		else:
 			self.client.send(message)
 		if self.discontinue:
@@ -72,17 +83,17 @@ class Welcome(threading.Thread):
 	def get_instruction(self,first_attempt = True,independent = True):
 		'''Receive the client socket, make a new thread and return control to the main program'''
 		welcome_instruction = '''Hello, to start using this service, you will have to either login or register yourself.\nPlease proceed by entering 'login' or 'register' to do the same.\nIf at any time you wish to discontinue using the service, please enter 'exit' '''
-		error_instruction = '''You are not yet logged in. Enter either 'login' or 'register' to continue, or 'exit' to stop'''
-		further_instruction = '''What do you want to do now?'''
+		error_instruction = colored('''You are not yet logged in. Enter either 'login' or 'register' to continue, or 'exit' to stop''' ,  'red', attrs=['bold'])
+		further_instruction = colored('''What do you want to do now?''',attrs=['blink'])
 
 		if not self.logged_in:
 			if first_attempt:
-				command = self.send(welcome_instruction,'main',100)
+				command = self.send(welcome_instruction,'main',100, pagebreak=True)
 			else:
 				command = self.send(error_instruction,'main',100)
 			return command
 		else:
-			command = self.send(further_instruction,'main',100)
+			command = self.send(further_instruction,'main',100, pagebreak=True)
 			return command
 		
 	def login(self):
@@ -90,12 +101,14 @@ class Welcome(threading.Thread):
 		Then expect a username and then a password'''
 		userid_instruction = 'Please type in your user id'
 		passwd_instruction = 'Please type in your password'
-		error_instruction = 'Incorrect userid / password. Please retry'
+		error_instruction = colored('Incorrect userid / password. Please retry','red',attrs=['bold'])
 		success_instruction = 'You are now logged in'
 		
-		#self.client.send(login_instruction,len(login_instruction)+1)
+		first_attempt = True
+		userid = self.send(userid_instruction,'login',100)
 		while True:
-			userid = self.send(userid_instruction,'login',100)
+			if not first_attempt:
+				userid = self.send(userid_instruction,'login',100)
 			password = self.send(passwd_instruction,'login',100)
 			
 			if userid == 'exit' or password == 'exit':
@@ -109,16 +122,17 @@ class Welcome(threading.Thread):
 				return True
 			else:
 				self.send(error_instruction,buffer = True)
+				first_attempt = False
 
 	def logout(self):
 		'''In this function we throw the user out of the logged in state.
 		And reset the variables appropriately'''
-		success_instruction = '''You have now logged out of the system.'''
+		success_instruction = colored('''You have now logged out of the system.''',attrs=['bold'])
 		
 		self.userd = None
 		self.logged_in = False
 
-		print self.addr, "User %s is exiting" % self.userid
+		print self.addr, "User %s is logging out" % self.userid
 		self.send(success_instruction,buffer = True)
 		return True
 
@@ -289,7 +303,7 @@ class Welcome(threading.Thread):
 		If a person types view, then the arguments will be fetched by this person will be userid'''
 		next_instruction = '''Now, you can choose to view more data of the user. Simply type in the any of the following command that you want to see\n'Posts','Pings',Subscribers','Subscriptions','Ups' '''
 		userid_instruction = 'Please enter the userid of the person whose profile you want to see'
-		error_userid_instruction = 'This userid does not exist. Please recheck'
+		error_userid_instruction = colored('This userid does not exist. Please recheck','red',attrs=['bold'])
 		empty_posts = 'This user has not posted anything yet'
 		empty_ups = 'This user has not given an up to any post'
 		empty_subscribers = 'This user has no subscribers yet'
@@ -360,7 +374,7 @@ class Welcome(threading.Thread):
 
 			if command == 'exit':
 				return self.exit()
-			if command == 'clear' or command == 'back':
+			if command == 'cancel' or command == 'back':
 				return False
 			if command == 'posts':
 				message = 'Recent Posts by ' + userid +': \n'
@@ -445,7 +459,7 @@ class Welcome(threading.Thread):
 		Since he has already logged in, we won't ask for his userid. 
 		We will generate a postid automatically and the only input thus required is the text itself''' 
 		content_instruction = '''Please enter the text you want to post'''
-		empty_content_instruction = '''We're sorry but you need to enter some content to post'''
+		empty_content_instruction = colored('''We're sorry but you need to enter some content to post''','red',attrs=['bold'])
 
 		status = -3
 		while status < 0:
@@ -466,7 +480,7 @@ class Welcome(threading.Thread):
 		'''This function will be used to subscribe to other users.
 		We expect the client to specify the userid and not usernames (to prevent duplication)'''
 		subsid_instruction = '''Please enter the userid of the user you want to subscribe to'''
-		error_subsid_instruction = '''The entered user does not exist. Please enter a valid username.\nYou may want to run 'users' to fetch the list of registered users'''
+		error_subsid_instruction = colored('''The entered user does not exist. Please enter a valid username.\nYou may want to run 'users' to fetch the list of registered users''','red',attrs=['bold'])
 		success_instruction = '''You have successfully subscribed to the user. Your timeline will now contain all his/her posts'''
 		
 		status = -3
@@ -494,7 +508,7 @@ class Welcome(threading.Thread):
 		We will assume that the user knows the id of the other userid_instruction
 		The parameter is an indication in the prompt regarding where he/she will return to after this operation'''
 		ping_instruction = '''Please enter the userid of the person you wish to ping'''
-		error_instruction = '''It seems that the userid was incorrect. The user doesn't exist. Kindly recheck and enter'''
+		error_instruction = colored('''It seems that the userid was incorrect. The user doesn't exist. Kindly recheck and enter''','red',attrs=['bold'])
 		success_instruction = '''The user was successfully pinged. Expect a ping back once he logs in :smile: '''
 
 		status = -3
@@ -521,7 +535,7 @@ class Welcome(threading.Thread):
 		'''This function will be used to 'up' a post
 		We expect the user to know the postid, which can be seen from the timeline'''
 		up_instruction = '''Please enter the post id of the post you want to 'up' '''
-		error_instruction = '''It seems that the postid you entered does not exist. Kindly recheck the enter'''
+		error_instruction = colored('''It seems that the postid you entered does not exist. Kindly recheck the enter''','red',attrs=['bold'])
 
 		status = -3
 		if from_timeline:
@@ -545,14 +559,16 @@ class Welcome(threading.Thread):
 		'''In this function we will show user his preferences and 
 		allow him to edit them as per required'''
 		welcome_instruction = 'You can change the following settings for your profile. Please enter the command corresponding to any option \n'
-		error_instruction = 'Command unrecognized. Please enter a valid command'
-		error_visible = 'Please enter either "true" or "false"'
+		error_instruction = colored('Command unrecognized. Please enter a valid command','red',attrs=['bold'])
+		error_visible = colored('Please enter either "true" or "false"','red',attrs=['bold'])
+		error_subsid = colored('Please enter a valid userid','red', attrs=['bold'])
 		visible_instruction = 'Enter "true" if you want your profile to be open to be seen by anyone on Ping. \nEnter "false" to hide yourself from global list of users and details of your profile to be viewed from anyone else except for your subscribers'
+		password_instruction = 'Enter the desired password that you want to use to log in the system. Please note it down somewhere and keep it safe'
+		subscriptions_instruction = 'Enter the userid of subscription you wish to remove'
 		options = []
-		options.append('Visibility-\tvisible')
-		options.append('Change Passoword-\tchange password')
-		options.append('Remove my posts-\tremove posts')
-		options.append('Remove my subscriptions-\tremove subscriptions')
+		options.append('Toggle Visibility-\t\tvisible')
+		options.append('Change Password-\t\tpassword')
+		options.append('Remove my subscriptions-\trsubscription')
 
 		instruction = welcome_instruction
 		for option in options:
@@ -573,13 +589,21 @@ class Welcome(threading.Thread):
 				if status == -2:
 					self.send(error_visible,buffer = True)
 
-		
+			if command == 'password':
+				command_ = self.send(password_instruction, 'main/settings/password',100)
+				status = self.database.update_user_password(self.userid,command_)
+
+			if command == 'rsubscription':
+				subsid = self.send(subscriptions_instruction, 'main/settings/remove_subscriber',100)
+				status = self.database.delete_subscription(self.userid,subsid)
+				if status == -2:
+					self.send(error_subsid,buffer = True)
+
 
 	def exit(self):
 		'''This function is used to finally end the client connection'''
 		exit_message = 'Closing the connection'
-		warning_instruction = 'Are you sure you want to exit? \nPress Yes to continue, No to cancel'
-
+		warning_instruction = colored('Are you sure you want to exit? \nPress Yes to continue, No to cancel','red',attrs=['bold'])
 		command = self.send(warning_instruction,'main/exit',100)
 
 		if command == 'exit':
@@ -641,6 +665,8 @@ class Welcome(threading.Thread):
 				self.logout()
 			if command == 'exit':
 				self.exit()
+			if command == 'clear':
+				continue
 
 		'''This part of the code will be accessed only while closing the connection'''
 		self.client.close
