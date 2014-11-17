@@ -1,4 +1,4 @@
-LANSocialNetwork
+Ping
 ===============
 
 This project will serve as a client server based social network working in a LAN.
