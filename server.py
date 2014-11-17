@@ -6,7 +6,7 @@ import sys
 
 
 def main():
-	connection_port = 9000
+	connection_port = 9003
 
 	#Initialize the socket which accepts connection and binds client to a thread.
 	connection = socket.socket()
@@ -22,6 +22,8 @@ def main():
 				port += 1
 			else:
 				break
+		else:
+			break
 	connection.listen(5000)
 
 	#To fetch the IP address of the server, we try and instantiate a connection to a dummy ip and port, only to fetch the IP of this computer

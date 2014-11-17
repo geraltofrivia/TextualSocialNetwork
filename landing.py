@@ -192,7 +192,7 @@ class Welcome(threading.Thread):
 		if operation == None:
 			message = instruction
 			for command in description:
-				message = message+command[0]+str(command[1])
+				message = message+colored(command[0],'yellow',attrs=['bold'])+str(command[1])
 			message = message
 
 		else:
@@ -275,7 +275,7 @@ class Welcome(threading.Thread):
 			self.send(empty_instruction, buffer = True)
 
 		for post in posts:
-			message = message + post[2] + ': ' + post[1] + '\n   +' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n\n'
+			message = message + colored(post[2],'magenta') + ': ' + post[1] + '\n   +' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n\n'
 			counter = counter + 1
 			if counter >= size:
 				message = message + next_instruction
@@ -341,7 +341,7 @@ class Welcome(threading.Thread):
 		message = ''
 		counter = 0
 
-		message = user_data[0] + '\nname-' + user_data[1] + '\n' + user_data[2]
+		message = colored(user_data[0],'yellow',attrs=['bold']) + '\nname-' + user_data[1] + '\n' + user_data[2]
 		message = message + ', Subscribers: #' + str(len(subscribers)) + ', Subscriptions: #' + str(len(subscribed_to)) + '\n'
 		message = message + 'Pings: \tsent: #' + str(len(pings_to_others)) + ', received: #' + str(len(pings_from_others)) + '\n\n'
 	
@@ -349,7 +349,7 @@ class Welcome(threading.Thread):
 		if len(posts) < 1:
 			message = message + empty_posts + '\n\n'
 		for post in posts:
-			message = message + '   ' + post[2] + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
+			message = message + '   ' + colored(post[2],'magenta') + ': ' + post[1] + '\n\t+' + str(post[4]) + ' @' + post[3][:-7] + ' #' + str(post[0]) + '\n'
 			counter = counter + 1
 			if counter >= 5:
 				break
