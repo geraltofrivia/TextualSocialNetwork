@@ -46,6 +46,12 @@ class Welcome(threading.Thread):
 
 		#Sending it all.
 		message = message + '#$!' + prompt
+
+		#See if the message asks to be potrayed as a new page. If yes then remove all leading line breaks
+		if prompt[-4] == '!':
+			while message[0] == '\n':
+				message = message[1:]
+
 		#If message size is larger than 1024, then send it in parts.
 		if len(message) > 1023:
 			print self.addr,": Sending long message"
@@ -63,6 +69,7 @@ class Welcome(threading.Thread):
 			if r > 0:
 				self.client.send(message[n*1024:])
 				print self.client.recv(1024)
+		
 		else:
 			self.client.send(message)
 		if self.discontinue:
@@ -77,12 +84,12 @@ class Welcome(threading.Thread):
 
 		if not self.logged_in:
 			if first_attempt:
-				command = self.send(welcome_instruction,'main',100)
+				command = self.send(welcome_instruction,'main!',100)
 			else:
-				command = self.send(error_instruction,'main',100)
+				command = self.send(error_instruction,'main!',100)
 			return command
 		else:
-			command = self.send(further_instruction,'main',100)
+			command = self.send(further_instruction,'main!',100)
 			return command
 		
 	def login(self):
@@ -93,9 +100,11 @@ class Welcome(threading.Thread):
 		error_instruction = 'Incorrect userid / password. Please retry'
 		success_instruction = 'You are now logged in'
 		
-		#self.client.send(login_instruction,len(login_instruction)+1)
+		first_attempt = True
+		userid = self.send(userid_instruction,'login!',100)
 		while True:
-			userid = self.send(userid_instruction,'login',100)
+			if not first_attempt:
+				userid = self.send(userid_instruction,'login',100)
 			password = self.send(passwd_instruction,'login',100)
 			
 			if userid == 'exit' or password == 'exit':
@@ -109,6 +118,7 @@ class Welcome(threading.Thread):
 				return True
 			else:
 				self.send(error_instruction,buffer = True)
+				first_attempt = False
 
 	def logout(self):
 		'''In this function we throw the user out of the logged in state.
@@ -118,7 +128,7 @@ class Welcome(threading.Thread):
 		self.userd = None
 		self.logged_in = False
 
-		print self.addr, "User %s is exiting" % self.userid
+		print self.addr, "User %s is logging out" % self.userid
 		self.send(success_instruction,buffer = True)
 		return True
 
@@ -136,7 +146,7 @@ class Welcome(threading.Thread):
 		while status < 0:
 			#self.client.send(register_instruction,len(register_instruction)+1)
 			if status <= -1: 
-				userid = self.send(userid_instruction,'register',100)
+				userid = self.send(userid_instruction,'register!',100)
 			if status <= -2:
 				usernm = self.send(usernm_instruction,'register',100)
 			if status <= -3:

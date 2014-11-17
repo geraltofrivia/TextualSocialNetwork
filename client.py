@@ -3,6 +3,7 @@ import socket
 import string
 import sys
 import time
+from termcolor import colored, cprint
 
 s = socket.socket()
 port = 9000
@@ -60,6 +61,8 @@ while True:
 
 #Just have one send one receive interface
 while continue_flag:
+	#print chr(27) + "[2J"
+	
 	message =  s.recv(1024)
 	message_ = str(message.split('#$!')[0])
 	prompt_ = str(message.split('#$!')[1])
@@ -87,6 +90,10 @@ while continue_flag:
 		prompt_ = str(message_.split('#$!')[-1])
 
 
+	#Routine to suffice new page calls. Check the last char on the prompt.
+	if prompt_[-4] == '!':
+		prompt_ = prompt_[:-4] + prompt_[-3:]
+		sys.stderr.write("\x1b[2J\x1b[H")
 	print message_
 	while True:
 		command = raw_input(prompt_)
